@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kalkulator Ketebalan Dinding Pipa</title>
+<meta name="theme-color" content="#14202b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kalkulator WT">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#e8ecef; --surface:#f6f8f9; --raised:#ffffff; --ink:#14202b; --muted:#56636f; --line:#c8d1d8; --line2:#dde3e8;
+  --accent:#c4650e; --accent-soft:#f6e4d2; --steel:#2c5f82; --steel-soft:#dbe7f0; --ok:#2d7a4c; --ok-soft:#dcefe3; --warn:#a67206; --warn-soft:#f6ecd0; --bad:#bd3a2b; --bad-soft:#f7dcd8;
+  --pipe:#5d6872; --ca:#c98a3c; --mill:#8fa6b8; --tm:#2c5f82; --spare:#7fb38f;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:6px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e141a; --surface:#141c24; --raised:#1a242e; --ink:#e1e8ee; --muted:#93a1ad; --line:#2a3743; --line2:#222e38;
+  --accent:#f0983c; --accent-soft:#3a2816; --steel:#7eb0d3; --steel-soft:#16293a; --ok:#5fc187; --ok-soft:#173025; --warn:#e3b43e; --warn-soft:#352b12; --bad:#f0705d; --bad-soft:#3b1d19;
+  --pipe:#9aa6b1; --ca:#d9a05a; --mill:#5f7a8f; --tm:#7eb0d3; --spare:#5fa073; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:max(20px,env(safe-area-inset-top,0px));padding-bottom:48px;max-width:1560px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,4vw,44px);line-height:1}
+h2{font-size:24px;line-height:1.1}
+h3{font-size:18px;line-height:1.15}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+p{margin:0}
+.top{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between;padding-bottom:18px;border-bottom:2px solid var(--ink);margin-bottom:20px}
+.top .proj{font-family:var(--f-display);font-size:20px;font-weight:600;color:var(--steel);margin-top:6px;text-wrap:balance}
+.top .lede{color:var(--muted);max-width:70ch;margin-top:8px}
+.actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.pdfrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pdfrow .hint{margin:0}
+#btnPdf{padding:9px 16px;font-size:13.5px}
+button:disabled{opacity:.6;cursor:progress}
+@media (max-width:640px){.actions{align-items:stretch}.pdfrow{justify-content:flex-start}}
+.verdict{display:flex;gap:10px;align-items:center;font-family:var(--f-display);font-size:20px;font-weight:600;padding:8px 14px;border-radius:var(--r);border:1.5px solid currentColor}
+.verdict.ok{color:var(--ok);background:var(--ok-soft)} .verdict.bad{color:var(--bad);background:var(--bad-soft)}
+.layout{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:20px 24px;align-items:start}
+.inputs{position:sticky;top:max(12px,env(safe-area-inset-top,0px));max-height:calc(100vh - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 16px 14px}
+.results{min-width:0;display:flex;flex-direction:column;gap:22px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.inputs{position:static;max-height:none}}
+fieldset{border:0;box-shadow:inset 0 1px 0 var(--line);margin:0;padding:14px 0 6px;min-width:0}
+fieldset:first-of-type{box-shadow:none}
+legend{font-family:var(--f-display);font-size:17px;font-weight:600;padding:0;margin-bottom:6px;display:flex;gap:8px;align-items:baseline;float:left;width:100%}
+legend+*{clear:both}
+legend .eyebrow{font-size:10px}
+.f{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center;margin:6px 0}
+.f.u{grid-template-columns:minmax(0,1fr) 172px}
+.f.wide{grid-template-columns:1fr}
+.f.wide label{margin-bottom:-2px}
+.uv{display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:4px}
+.uv select{padding-inline:4px}
+.f label{font-size:13px;color:var(--ink);line-height:1.25}
+.f label small{display:block;color:var(--muted);font-size:11px}
+input[type=number],input[type=text],input[type=date],select{width:100%;font:500 13px/1.2 var(--f-mono);color:var(--ink);background:var(--raised);border:1px solid var(--line);border-radius:4px;padding:6px 7px;min-width:0}
+input:disabled,select:disabled{opacity:.6}
+input[readonly]{background:transparent;border-style:dashed}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ovr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:center}
+.ovr input[type=checkbox]{margin:0;accent-color:var(--accent);width:15px;height:15px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.chk input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:5px;overflow:hidden;margin:4px 0 8px;background:var(--raised)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:8px 6px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);border-left:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;align-items:center;line-height:1.15}
+.seg label small{font-weight:500;font-size:10.5px;opacity:.85}
+.seg label:first-of-type{border-left:0}
+.seg input:checked+label{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:-2px}
+.hint{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+button{font:600 12.5px/1 var(--f-body);color:var(--ink);background:var(--raised);border:1px solid var(--line);border-radius:4px;padding:7px 10px;cursor:pointer}
+button:hover{border-color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+/* results */
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:12px}
+.sec-h p{color:var(--muted);font-size:12.5px;max-width:72ch}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cards>div{background:var(--surface);padding:12px 14px;min-width:0}
+@media (max-width:1100px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cards dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cards dd{margin:3px 0 0;font:500 22px/1.15 var(--f-mono);font-variant-numeric:tabular-nums}
+.cards dd small{font-size:12px;color:var(--muted);font-family:var(--f-body);display:block;margin-top:2px}
+.cards .hero{background:var(--accent-soft)}
+.cards .hero dd{color:var(--accent);font-size:26px}
+.viz{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:22px;align-items:center}
+@media (max-width:640px){.viz{grid-template-columns:1fr}}
+.viz svg{width:100%;height:auto;display:block}
+.stack{display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;height:34px;border-radius:5px;overflow:hidden;border:1px solid var(--line);background:var(--raised)}
+.bar i{display:block;height:100%;min-width:2px}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.keys span{display:inline-flex;align-items:center;gap:6px}
+.keys i{display:inline-block;width:12px;height:12px;border-radius:2px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.grp td{font-family:var(--f-display);font-size:15px;font-weight:600;padding-top:12px;border-bottom:1px solid var(--line);color:var(--steel)}
+tr.on td{background:var(--accent-soft)}
+tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+tr.dim td{color:var(--muted)}
+.pill{display:inline-block;font:600 11px/1 var(--f-body);padding:4px 7px;border-radius:20px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.inf{background:var(--steel-soft);color:var(--steel)}
+.ref{font-size:11.5px;color:var(--muted)}
+.ucbar{display:inline-block;width:46px;height:5px;background:var(--line2);border-radius:3px;vertical-align:middle;margin-right:6px;position:relative;overflow:hidden}
+.ucbar i{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.msgs{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.msgs li{padding:8px 10px;border-radius:5px;font-size:13px;border-left:3px solid}
+.msgs li.w{background:var(--warn-soft);border-color:var(--warn)} .msgs li.i{background:var(--raised);border-color:var(--steel)}
+/* step-by-step */
+.steps{display:flex;flex-direction:column;gap:14px;counter-reset:st}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}
+.step::before{counter-increment:st;content:counter(st);font:600 18px/34px var(--f-display);text-align:center;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--bg)}
+.step h3{margin-bottom:6px}
+.eqbox{background:var(--raised);border:1px solid var(--line2);border-radius:5px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-family:var(--f-mono);font-size:14px;overflow-x:auto}
+.eq{display:inline-block;white-space:nowrap;line-height:2}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.25;margin:0 6px}
+.fr>span:first-child{border-bottom:1.4px solid currentColor;padding:0 4px 2px}
+.fr>span:last-child{padding:2px 4px 0}
+.eq b{color:var(--accent);font-weight:600}
+.eqbox .ref{font-family:var(--f-body);flex-basis:100%;margin-top:-2px}
+var{font-style:italic;font-family:"Times New Roman",Georgia,serif;font-size:1.08em}
+sub{font-size:.72em}
+.explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px 22px}
+.explain article{border-top:1px solid var(--line2);padding-top:10px}
+.explain h3{margin-bottom:6px}
+.explain p,.explain li{font-size:13px}
+.explain p+p{margin-top:6px}
+.explain ul{margin:6px 0 0;padding-left:18px}
+.explain dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:8px 0 0;font-size:12.5px}
+.explain dt{font-family:"Times New Roman",Georgia,serif;font-style:italic;font-size:14px}
+.explain dd{margin:0;color:var(--muted)}
+.mini{font-size:12px;margin-top:8px}
+.mini th{font-size:10px}
+.mini td{padding:4px 8px}
+.std{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px 22px}
+.std div{padding:10px 0;border-top:1px solid var(--line2)}
+.std b{font-family:var(--f-display);font-size:16px;font-weight:600;display:block}
+.std span{font-size:12.5px;color:var(--muted)}
+ul.plain{margin:0;padding-left:18px} ul.plain li{margin:3px 0}
+.foot{color:var(--muted);font-size:12px;margin-top:6px}
+/* scenarios */
+.scrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin:4px 0}
+.sclist{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:190px;overflow:auto}
+.sc-item{display:grid;grid-template-columns:8px minmax(0,1fr) auto auto;gap:6px;align-items:center;background:var(--raised);border:1px solid var(--line2);border-radius:4px;padding:4px 5px 4px 7px}
+.sc-item.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.sc-item .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sc-item .dot.ok{background:var(--ok)} .sc-item .dot.bad{background:var(--bad)}
+.sc-main{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.sc-main b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-main span{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-item button{padding:3px 7px;font-size:11.5px}
+.sc-item .sc-del{padding:3px 6px;color:var(--muted)}
+.sc-item .sc-del.danger{color:#fff}
+.sc-empty{font-size:12px;color:var(--muted);padding:6px 0}
+details.more>summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted);padding:4px 0}
+.copyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="eyebrow">Pipa penyalur &amp; perpipaan di darat · ASME B31.8 · ASME B31.3</div>
+    <h1>Kalkulator Ketebalan Dinding Pipa</h1>
+    <p class="proj" id="projLine">–</p>
+    <p class="lede">Isi data pipa, tekanan, dan temperatur desain di panel kiri. Calculated wall thickness, thickness necessary, dan wall thickness standar yang dipilih dihitung ulang langsung, lengkap dengan langkah, pemeriksaan, dan perbandingan ketebalan. Metode mengikuti ASME B31.8 (servis gas bumi) dan ASME B31.3 (servis selain gas bumi).</p>
+  </div>
+  <div class="actions">
+    <div class="verdict" id="verdict" role="status">–</div>
+    <div class="pdfrow"><button type="button" class="primary" id="btnPdf">Unduh PDF</button><span id="pdfMsg" class="hint" role="status"></span></div>
+  </div>
+</header>
+
+<div class="layout">
+<form class="inputs" id="frm" autocomplete="off" onsubmit="return false">
+  <fieldset id="fsProj">
+    <legend>Proyek <span class="eyebrow">kop laporan</span></legend>
+    <div class="f wide"><label for="projName">Nama proyek / jalur</label><input type="text" id="projName" placeholder="mis. Pipa Distribusi NPS 8 Ruas A–B"></div>
+    <div class="f"><label for="projClient">Klien / pemilik</label><input type="text" id="projClient"></div>
+    <div class="f"><label for="lineTag">Line / tag no.</label><input type="text" id="lineTag"></div>
+    <div class="f"><label for="docNo">No. dokumen</label><input type="text" id="docNo"></div>
+    <div class="f"><label for="docRev">Revisi</label><input type="text" id="docRev" value="0"></div>
+    <div class="f"><label for="docDate">Tanggal</label><input type="date" id="docDate"></div>
+    <div class="f"><label for="prepBy">Disusun oleh</label><input type="text" id="prepBy"></div>
+    <div class="f"><label for="chkBy">Diperiksa oleh</label><input type="text" id="chkBy"></div>
+  </fieldset>
+
+  <fieldset id="fsScen">
+    <legend>Skenario <span class="eyebrow">simpan &amp; buka</span></legend>
+    <div class="scrow"><input type="text" id="scName" placeholder="Nama skenario, mis. Opsi A – X52" maxlength="80" aria-label="Nama skenario"><button type="button" class="primary" id="btnScSave">Simpan</button></div>
+    <div class="btnrow"><button type="button" id="btnScNew">Skenario baru</button><button type="button" id="btnScExport">Ekspor .json</button><button type="button" id="btnScImport">Impor .json</button><input type="file" id="fileImport" accept=".json,application/json" hidden></div>
+    <p class="hint" id="scWhere">–</p>
+    <p class="hint" id="scMsg" role="status"></p>
+    <details class="more" open><summary>Tersimpan <span id="scCount"></span></summary><ul class="sclist" id="scList"></ul></details>
+  </fieldset>
+
+  <fieldset id="fsCode">
+    <legend>Kode desain</legend>
+    <div class="seg" role="radiogroup" aria-label="Kode desain">
+      <input type="radio" name="code" id="cB318" value="b318" checked><label for="cB318">ASME B31.8<small>servis gas bumi</small></label>
+      <input type="radio" name="code" id="cB313" value="b313"><label for="cB313">ASME B31.3<small>servis selain gas bumi</small></label>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Sistem" id="segSys">
+      <input type="radio" name="sys" id="sPl" value="pl" checked><label for="sPl">Pipa penyalur<small>pipeline</small></label>
+      <input type="radio" name="sys" id="sPp" value="pp"><label for="sPp">Perpipaan<small>stasiun / MRS</small></label>
+    </div>
+    <p class="hint" id="codeHint">–</p>
+  </fieldset>
+
+  <fieldset id="fsPipe">
+    <legend>Pipa</legend>
+    <div class="f u"><label for="spec">Spesifikasi material</label><select id="spec"></select></div>
+    <div class="f u"><label for="grade">Grade<small id="gradeNote">–</small></label><select id="grade"></select></div>
+    <div class="f u"><label for="ptype">Jenis manufaktur</label><select id="ptype"></select></div>
+    <div class="f u"><label for="nps">Ukuran (NPS)<small id="npsNote">–</small></label><select id="nps"></select></div>
+    <div class="f"><label for="odMode">Sumber diameter luar<small>default ASME B36.10M</small></label><select id="odMode"><option value="nps">Sesuai NPS</option><option value="custom">Isi manual</option></select></div>
+    <div class="f u" id="rowOd"><label for="odCustom">Diameter luar, D<small id="odNote">otomatis dari NPS</small></label><div class="uv"><input type="number" id="odCustom" step="any" min="0" value="8.625"><select id="odUnit"><option value="in">in</option><option value="mm">mm</option></select></div></div>
+  </fieldset>
+
+  <fieldset id="fsDesign">
+    <legend>Kondisi desain</legend>
+    <div class="f u"><label for="pVal">Tekanan desain, P<small>gauge</small></label><div class="uv"><input type="number" id="pVal" step="any" min="0" value="285"><select id="pUnit"><option value="psi">psig</option><option value="bar">barg</option><option value="mpa">MPa</option></select></div></div>
+    <div class="f u"><label for="tVal">Temperatur desain</label><div class="uv"><input type="number" id="tVal" step="any" value="150"><select id="tUnit"><option value="F">°F</option><option value="C">°C</option></select></div></div>
+    <div class="f"><label for="flCls">Kelas flange<small>ASME B16.5 Grup 1.1, opsional</small></label><select id="flCls"><option value="">–</option><option>150</option><option>300</option><option>400</option><option>600</option><option>900</option><option>1500</option><option>2500</option></select></div>
+    <div class="f"><label for="flBasis">Rating dibaca pada</label><select id="flBasis"><option value="amb">−20 s.d. 100 °F</option><option value="design">Temperatur desain</option></select></div>
+    <div class="btnrow"><button type="button" id="btnFl">Isi P dari rating flange</button></div>
+    <p class="hint" id="flHint">ASME B16.5 Grup 1.1 (A105/WCB) pada −20 s.d. 100 °F: Class 150 = 285, 300 = 740, 600 = 1.480 psig. Sebaiknya P mengikuti kebutuhan proses/MAOP, bukan rating flange.</p>
+  </fieldset>
+
+  <fieldset id="fsFac">
+    <legend>Faktor desain <span class="eyebrow" id="facCode">B31.8</span></legend>
+    <div id="fac318">
+      <div class="f u"><label for="loc">Kelas lokasi<small>Tabel 841.1.6-1</small></label><select id="loc"></select></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="fOver"><span>Design factor, F<small>centang untuk isi manual</small></span></label><input type="number" id="fVal" step="0.01" min="0.1" max="1"></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="eOver"><span>Long. joint factor, E<small>Tabel 841.1.7-1</small></span></label><input type="number" id="eVal" step="0.05" min="0.1" max="1"></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="tOver"><span>Temp. derating, T<small>Tabel 841.1.8-1</small></span></label><input type="number" id="tdVal" step="0.001" min="0.1" max="1"></div>
+    </div>
+    <div id="fac313" hidden>
+      <div class="f"><label class="ovr"><input type="checkbox" id="sOver"><span>Allowable stress, S<small>psi · Tabel A-1</small></span></label><input type="number" id="sVal" step="any" min="1"></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="e3Over"><span>Quality factor, E<sub>j</sub><small>Tabel A-3</small></span></label><input type="number" id="e3Val" step="0.05" min="0.1" max="1"></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="wOver"><span>Weld strength red., W<small>Tabel 302.3.5-1</small></span></label><input type="number" id="wVal" step="0.01" min="0.1" max="1"></div>
+      <div class="f"><label class="ovr"><input type="checkbox" id="yOver"><span>Coefficient, Y<small>Tabel 304.1.1-1</small></span></label><input type="number" id="yVal" step="0.1" min="0" max="0.7"></div>
+    </div>
+  </fieldset>
+
+  <fieldset id="fsAllow">
+    <legend>Allowance &amp; toleransi</legend>
+    <div class="f u"><label for="caVal">Corrosion allowance<small>internal</small></label><div class="uv"><input type="number" id="caVal" step="any" min="0" value="0.0625"><select id="caUnit"><option value="in">in</option><option value="mm">mm</option></select></div></div>
+    <div class="f u"><label for="mechVal">Mechanical allowance<small>ulir / alur, bila ada</small></label><div class="uv"><input type="number" id="mechVal" step="any" min="0" value="0"><select id="mechUnit"><option value="in">in</option><option value="mm">mm</option></select></div></div>
+    <div class="f"><label for="tolMode">Mill / thickness tolerance<small id="tolNote">–</small></label><select id="tolMode"><option value="manual" selected>Persentase (%)</option><option value="auto">Sesuai spesifikasi</option></select></div>
+    <div class="f" id="rowTol"><label for="tolPct">Toleransi manual<small>% dari WT nominal (sisi minus)</small></label><input type="number" id="tolPct" step="0.5" min="0" max="30" value="10"></div>
+  </fieldset>
+
+  <fieldset id="fsSel">
+    <legend>Pemilihan WT</legend>
+    <p class="hint">WT dipilih dari schedule ASME B36.10M (baja karbon) / B36.19 (stainless): schedule terdekat ke atas yang ≥ t<sub>n</sub>.</p>
+    <div class="f u"><label for="minSch">Schedule minimum<small>Piping Material Class</small></label><select id="minSch"><option value="">Tidak ada</option><option value="10">Sch 10 / 10S</option><option value="40">STD / Sch 40 / 40S</option><option value="80">XS / Sch 80 / 80S</option></select></div>
+    <div class="f u"><label for="wtSel">WT terpilih</label><select id="wtSel"></select></div>
+    <div class="f u" id="rowWt" hidden><label for="wtCustom">WT manual</label><div class="uv"><input type="number" id="wtCustom" step="any" min="0" value="0.25"><select id="wtUnit"><option value="in">in</option><option value="mm">mm</option></select></div></div>
+  </fieldset>
+
+  <fieldset id="fsChk">
+    <legend>Pemeriksaan tambahan</legend>
+    <div class="f"><label for="testK">Faktor uji tekan<small>× P desain (hydrotest)</small></label><input type="number" id="testK" step="0.05" min="1" value="1.5"></div>
+    <div class="f"><label for="dtLim">Batas D/t<small>handling/konstruksi; 0 = nonaktif</small></label><input type="number" id="dtLim" step="1" min="0" value="70"></div>
+    <label class="chk"><input type="checkbox" id="pdfAll" checked> Sertakan ringkasan semua NPS di PDF</label>
+  </fieldset>
+</form>
+
+<main class="results" aria-label="Hasil perhitungan">
+  <section class="sec" aria-labelledby="hSum">
+    <div class="sec-h"><h2 id="hSum">Hasil</h2><p id="sumNote">–</p></div>
+    <dl class="cards" id="cards"></dl>
+    <div class="viz" style="margin-top:16px">
+      <svg id="xsec" viewBox="0 0 260 260" role="img" aria-label="Penampang pipa"></svg>
+      <div class="stack">
+        <h3>Komposisi WT terpilih</h3>
+        <div class="bar" id="bar" aria-hidden="true"></div>
+        <div class="keys" id="barKeys"></div>
+        <p class="hint" id="barNote">–</p>
+        <ul class="msgs" id="msgs"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="hSteps">
+    <div class="sec-h"><h2 id="hSteps">Langkah perhitungan</h2><p>Urutan: data input → calculated wall thickness → thickness necessary → selected wall thickness.</p></div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="hChk">
+    <div class="sec-h"><h2 id="hChk">Pemeriksaan desain</h2><p>UC = nilai/batas. UC &gt; 1,00 berarti tidak memenuhi. Baris berlabel "info" tidak menentukan lulus/tidaknya desain.</p></div>
+    <div class="tw"><table id="tblChecks"></table></div>
+  </section>
+
+  <section class="sec" aria-labelledby="hCmp">
+    <div class="sec-h"><h2 id="hCmp">Perbandingan wall thickness</h2><p id="cmpNote">Semua WT standar untuk NPS ini. Baris bersorot = WT terpilih. Klik baris untuk memilihnya.</p></div>
+    <div class="tw"><table id="tblCmp"></table></div>
+  </section>
+
+  <section class="sec" aria-labelledby="hAll">
+    <div class="sec-h"><h2 id="hAll">Ringkasan semua ukuran</h2><p>WT minimum yang memenuhi untuk setiap NPS dengan material, tekanan, temperatur, faktor, dan allowance yang sama. Klik baris untuk membuka ukuran itu.</p></div>
+    <div class="tw"><table id="tblAll"></table></div>
+  </section>
+
+  <section class="sec" aria-labelledby="hEx">
+    <div class="sec-h"><h2 id="hEx">Penjelasan rumus &amp; parameter</h2><p>Ringkasan dasar perhitungan dari ASME B31.8, ASME B31.3, dan API 5L.</p></div>
+    <div class="explain">
+      <article>
+        <h3>Persamaan (1) · ASME B31.8 841.1.1(a)</h3>
+        <div class="eqbox"><span class="eq"><var>t</var><sub>m</sub> = <span class="fr"><span><var>P</var> · <var>D</var></span><span>2 · <var>S</var> · <var>F</var> · <var>E</var> · <var>T</var></span></span></span></div>
+        <p style="margin-top:8px">Rumus Barlow untuk pipa servis gas bumi, baik pipa penyalur maupun perpipaan stasiun. Berlaku untuk pipa dinding tipis (D/t &gt; 30). Untuk D/t &lt; 30, 841.1.1(b) mengizinkan rumus alternatif <span class="num">P = 2St/(D − t)·FET</span>.</p>
+        <dl><dt>P</dt><dd>tekanan desain, psig</dd><dt>D</dt><dd>diameter luar nominal, in (B36.10M)</dd><dt>S</dt><dd>SMYS, psi (API 5L / spesifikasi ASTM)</dd><dt>F</dt><dd>design factor sesuai kelas lokasi</dd><dt>E</dt><dd>longitudinal weld joint quality factor</dd><dt>T</dt><dd>temperature derating factor</dd></dl>
+      </article>
+      <article>
+        <h3>Persamaan (3) · ASME B31.3 304.1.2(a)</h3>
+        <div class="eqbox"><span class="eq"><var>t</var><sub>m</sub> = <span class="fr"><span><var>P</var> · <var>D</var></span><span>2 (<var>S</var><var>E</var><var>W</var> + <var>P</var><var>Y</var>)</span></span></span></div>
+        <p style="margin-top:8px">Untuk perpipaan servis selain gas bumi (utility, udara instrumen, air, LNG). Berlaku bila t &lt; D/6. Bila t ≥ D/6 atau P/SE &gt; 0,385, perlu pertimbangan khusus (teori kegagalan, fatigue, tegangan termal).</p>
+        <dl><dt>S</dt><dd>basic allowable stress pada temperatur logam, psi (Tabel A-1)</dd><dt>E</dt><dd>quality factor (E<sub>c</sub> Tabel A-2 / E<sub>j</sub> Tabel A-3), maks. 1,00</dd><dt>W</dt><dd>weld joint strength reduction factor (Tabel 302.3.5-1)</dd><dt>Y</dt><dd>koefisien (Tabel 304.1.1-1), 0,4 untuk baja feritik ≤ 900 °F dan austenitik ≤ 1050 °F</dd></dl>
+      </article>
+      <article>
+        <h3>Persamaan (2) · Thickness Necessary</h3>
+        <div class="eqbox"><span class="eq"><var>t</var><sub>n</sub> = <span class="fr"><span><var>t</var><sub>m</sub> + <var>c</var></span><span>1 − <var>m</var></span></span></span></div>
+        <p style="margin-top:8px">Tebal nominal minimum setelah ditambah allowance <var>c</var> (korosi + erosi + mekanis) dan dikoreksi mill tolerance <var>m</var>. Bila toleransi API 5L berupa nilai absolut (mm), aplikasi mencari tebal nominal terkecil yang memenuhi <span class="num">t − toleransi(t) ≥ t<sub>m</sub> + c</span>. Hasilnya setara dengan Persamaan (2).</p>
+        <p>Selected Wall Thickness = schedule ASME B36.10M (baja karbon) atau B36.19 (stainless) terdekat ke atas yang sama atau lebih besar dari t<sub>n</sub>.</p>
+      </article>
+      <article>
+        <h3>Design factor, F · Tabel 841.1.6-1</h3>
+        <table class="mini"><thead><tr><th>Kelas lokasi</th><th class="n">F</th></tr></thead><tbody>
+        <tr><td>Kelas 1 Divisi 1</td><td class="n">0,80</td></tr><tr><td>Kelas 1 Divisi 2</td><td class="n">0,72</td></tr><tr><td>Kelas 2</td><td class="n">0,60</td></tr><tr><td>Kelas 3</td><td class="n">0,50</td></tr><tr><td>Kelas 4</td><td class="n">0,40</td></tr></tbody></table>
+        <p class="mini">Kelas lokasi ditetapkan sesuai ASME B31.8 840.2.2 / SNI 3474. Pengecualian untuk stasiun, crossing, dan fabricated assemblies ada di Tabel 841.1.6-2; gunakan isian F manual.</p>
+      </article>
+      <article>
+        <h3>Joint factor, E · Tabel 841.1.7-1 / A-3</h3>
+        <table class="mini"><thead><tr><th>Spesifikasi · jenis</th><th class="n">B31.8</th><th class="n">B31.3</th></tr></thead><tbody>
+        <tr><td>API 5L SMLS</td><td class="n">1,00</td><td class="n">1,00</td></tr><tr><td>API 5L ERW / HFW</td><td class="n">1,00</td><td class="n">0,85</td></tr><tr><td>API 5L SAWL / SAWH</td><td class="n">1,00</td><td class="n">0,95</td></tr><tr><td>API 5L / A53 furnace butt weld</td><td class="n">0,60</td><td class="n">0,60</td></tr><tr><td>ASTM A106 SMLS</td><td class="n">1,00</td><td class="n">1,00</td></tr><tr><td>ASTM A53 Type E</td><td class="n">1,00</td><td class="n">0,85</td></tr><tr><td>ASTM A312 SMLS</td><td class="n">1,00</td><td class="n">1,00</td></tr><tr><td>ASTM A312 EFW double / single butt</td><td class="n">–</td><td class="n">0,85 / 0,80</td></tr></tbody></table>
+      </article>
+      <article>
+        <h3>Temperature derating, T · Tabel 841.1.8-1</h3>
+        <table class="mini"><thead><tr><th>Temperatur</th><th class="n">T</th></tr></thead><tbody>
+        <tr><td>≤ 250 °F (121 °C)</td><td class="n">1,000</td></tr><tr><td>300 °F (149 °C)</td><td class="n">0,967</td></tr><tr><td>350 °F (177 °C)</td><td class="n">0,933</td></tr><tr><td>400 °F (204 °C)</td><td class="n">0,900</td></tr><tr><td>450 °F (232 °C)</td><td class="n">0,867</td></tr></tbody></table>
+        <p class="mini">Nilai di antara titik tabel diinterpolasi linier.</p>
+      </article>
+      <article>
+        <h3>SMYS · API Spec 5L edisi 47 (2026)</h3>
+        <table class="mini"><thead><tr><th>Grade</th><th class="n">MPa</th><th class="n">psi</th></tr></thead><tbody id="smysTbl"></tbody></table>
+        <p class="mini">Nilai sama untuk PSL 1 dan PSL 2. ASTM A106/A53 Gr. B dan A333 Gr. 6 memakai 35.000 psi sesuai spesifikasi ASTM-nya.</p>
+      </article>
+      <article>
+        <h3>Mill tolerance = thickness tolerance (sisi minus)</h3>
+        <table class="mini"><thead><tr><th>Spesifikasi</th><th>Toleransi</th></tr></thead><tbody>
+        <tr><td>API 5L welded, t ≤ 5,0 mm</td><td>−0,5 mm</td></tr><tr><td>API 5L welded, 5,0 &lt; t &lt; 15,0 mm</td><td>−10% t</td></tr><tr><td>API 5L welded, t ≥ 15,0 mm</td><td>−1,5 mm</td></tr>
+        <tr><td>API 5L SMLS, t ≤ 4,0 mm</td><td>−0,5 mm</td></tr><tr><td>API 5L SMLS, 4,0 &lt; t &lt; 25,0 mm</td><td>−12,5% t</td></tr><tr><td>API 5L SMLS, t ≥ 25,0 mm</td><td>−3,0 mm atau −10% t (yang lebih besar)</td></tr>
+        <tr><td>ASTM A106 / A53 / A333 / A312</td><td>−12,5% t (A530 / A999)</td></tr></tbody></table>
+        <p class="mini">Persentase mengacu ke spesifikasi material. Aplikasi memakai 10% sebagai default; ganti ke 12,5% untuk ASTM A106/A53/A333/A312 bila mengikuti spesifikasinya.</p>
+      </article>
+      <article>
+        <h3>Allowance, c</h3>
+        <p>Pada perencanaan awal, corrosion &amp; erosion allowance umum 0,0625 in (setara laju korosi 3,125 mpy) sudah cukup untuk baja karbon. Material tahan korosi (stainless/CRA) tidak memerlukan CA. External CA umumnya tidak dipakai karena pipa dilindungi coating dan proteksi katodik.</p>
+        <p>Mechanical allowance hanya untuk komponen berulir/beralur (kedalaman ulir ASME B1.20.1; alur tanpa toleransi +0,5 mm). Untuk pipa penyalur jarang dipakai kecuali di bending, crossing yang perlu penguatan, atau seksi HDD.</p>
+      </article>
+      <article>
+        <h3>MAOP, MAWP &amp; hoop stress</h3>
+        <p>Kapasitas WT terpilih dihitung dua kali. Pertama dengan t nominal (MAOP menurut rumus desain). Kedua dengan t sisa = t − mill tolerance − c, yaitu kondisi akhir umur desain dengan toleransi pabrik terburuk (MAWP sisa). WT memenuhi bila P desain ≤ MAWP sisa, setara dengan t ≥ t<sub>n</sub>.</p>
+        <div class="eqbox" style="margin-top:8px"><span class="eq"><var>σ</var><sub>h</sub> = <span class="fr"><span><var>P</var> · <var>D</var></span><span>2 <var>t</var></span></span></span><span class="eq">MAWP = <span class="fr"><span>2 <var>S</var> <var>t</var><sub>sisa</sub></span><span><var>D</var></span></span> · <var>F E T</var></span></div>
+        <p class="mini">Hoop stress uji tekan dihitung pada P uji = faktor × P desain (B31.3: ditambah rasio S<sub>uji</sub>/S<sub>desain</sub>, maks. 6,5) dan dibandingkan dengan SMYS. Bila lebih dari 90% SMYS, beri perhatian khusus.</p>
+      </article>
+      <article>
+        <h3>Kesalahan umum dalam pemilihan WT</h3>
+        <ul>
+          <li>Tekanan desain lebih tinggi dari kebutuhan operasi, atau disamakan dengan rating flange yang melebihi MAOP.</li>
+          <li>Menebalkan pipa agar setara rating flange. Dinding pipa boleh lebih tipis dari flange pasangannya.</li>
+          <li>Salah memilih code (B31.8 untuk gas bumi, B31.3 untuk selain gas bumi) atau salah memasukkan tegangan izin.</li>
+          <li>Menambahkan allowance di tempat yang tidak perlu, misalnya CA pada stainless.</li>
+          <li>Memakai tebal hasil hitung persis (non-standar) demi menekan tonase. Biaya produksi khususnya lebih mahal.</li>
+          <li>Menaikkan grade untuk menekan tonase tanpa menghitung biaya pengelasan, handling, dan instalasi.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="hStd">
+    <div class="sec-h"><h2 id="hStd">Standar &amp; referensi</h2></div>
+    <div class="std" id="std">
+      <div><b>ASME B31.8-2025</b><span>Gas Transmission and Distribution Piping Systems: 841.1.1, Tabel 841.1.6-1, 841.1.7-1, 841.1.8-1, Appendix D.</span></div>
+      <div><b>ASME B31.3-2024</b><span>Process Piping: 304.1.2, Tabel A-1, A-2, A-3, 302.3.5-1, 304.1.1-1, 345.4.2.</span></div>
+      <div><b>API Spec 5L, edisi 47 (Juni 2026)</b><span>Line Pipe: sifat tarik (SMYS/SMTS) dan toleransi tebal dinding.</span></div>
+      <div><b>ASME B36.10M / B36.19</b><span>Dimensi pipa baja karbon (welded &amp; seamless) dan pipa stainless.</span></div>
+      <div><b>ASME B16.5</b><span>Pipe Flanges and Flanged Fittings: rating tekanan–temperatur Grup 1.1.</span></div>
+      <div><b>ASTM A106, A53, A333, A312, A530, A999</b><span>Spesifikasi pipa seamless/welded dan toleransi dimensinya.</span></div>
+      <div><b>SNI 3474 &amp; Permen ESDM No. 32/2021</b><span>Sistem penyaluran dan distribusi pipa gas; klasifikasi lokasi dan inspeksi teknis.</span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="hAs">
+    <div class="sec-h"><h2 id="hAs">Asumsi &amp; batasan</h2></div>
+    <ul class="plain" id="assume">
+      <li>Perhitungan hanya berdasarkan tekanan internal, untuk perencanaan awal. Tekanan eksternal, beban tanah/lalu lintas, buckling, beban instalasi HDD, dan analisis tegangan dikaji terpisah pada FEED/desain detail.</li>
+      <li>Pemilihan material (servis asam, temperatur rendah, kekerasan) berada di luar lingkup aplikasi ini.</li>
+      <li>Nilai S ASME B31.3 bawaan berlaku sampai 400 °F. Di atas itu, atau bila edisi code berbeda, isi S manual dari Tabel A-1.</li>
+      <li>WT terpilih selalu berupa schedule ASME B36.10M / B36.19 (schedule terdekat ke atas dari t<sub>n</sub>). WT non-schedule API 5L tidak dipakai.</li>
+      <li>Rating flange hanya untuk Grup 1.1 (baja karbon). Untuk stainless, gunakan tabel grup material yang sesuai di B16.5.</li>
+      <li>Berat pipa (kg/m) dihitung untuk pipa polos tanpa coating, concrete weight coating, atau isi.</li>
+    </ul>
+    <div class="copyrow"><button type="button" id="btnCopy">Salin ringkasan</button><span class="hint" id="copyMsg" role="status"></span></div>
+    <p class="foot">Alat bantu desain awal. Hasil akhir wajib diverifikasi engineer yang berwenang terhadap edisi code dan spesifikasi proyek yang berlaku.</p>
+  </section>
+</main>
+</div>
+</div>
+<script>
+/* ==== WT ENGINE: data tables + calculation (units inside: inch, psi, °F) ==== */
+const WT = (() => {
+'use strict';
+const BAR = 14.503774, MPA = 145.03774;
+
+/* --- ASME B36.10M (carbon steel) : NPS -> [OD in, DN, [[label, t in], ...]] --- */
+const B3610 = {
+  '1/2': [0.840, 15, [['10', .083], ['STD/40', .109], ['XS/80', .147], ['160', .188], ['XXS', .294]]],
+  '3/4': [1.050, 20, [['10', .083], ['STD/40', .113], ['XS/80', .154], ['160', .219], ['XXS', .308]]],
+  '1': [1.315, 25, [['10', .109], ['STD/40', .133], ['XS/80', .179], ['160', .250], ['XXS', .358]]],
+  '1-1/4': [1.660, 32, [['10', .109], ['STD/40', .140], ['XS/80', .191], ['160', .250], ['XXS', .382]]],
+  '1-1/2': [1.900, 40, [['10', .109], ['STD/40', .145], ['XS/80', .200], ['160', .281], ['XXS', .400]]],
+  '2': [2.375, 50, [['10', .109], ['STD/40', .154], ['XS/80', .218], ['160', .344], ['XXS', .436]]],
+  '2-1/2': [2.875, 65, [['10', .120], ['STD/40', .203], ['XS/80', .276], ['160', .375], ['XXS', .552]]],
+  '3': [3.500, 80, [['10', .120], ['STD/40', .216], ['XS/80', .300], ['160', .438], ['XXS', .600]]],
+  '3-1/2': [4.000, 90, [['10', .120], ['STD/40', .226], ['XS/80', .318], ['XXS', .636]]],
+  '4': [4.500, 100, [['10', .120], ['STD/40', .237], ['XS/80', .337], ['120', .438], ['160', .531], ['XXS', .674]]],
+  '5': [5.563, 125, [['10', .134], ['STD/40', .258], ['XS/80', .375], ['120', .500], ['160', .625], ['XXS', .750]]],
+  '6': [6.625, 150, [['10', .134], ['STD/40', .280], ['XS/80', .432], ['120', .562], ['160', .719], ['XXS', .864]]],
+  '8': [8.625, 200, [['10', .148], ['20', .250], ['30', .277], ['STD/40', .322], ['60', .406], ['XS/80', .500], ['100', .594], ['120', .719], ['140', .812], ['XXS', .875], ['160', .906]]],
+  '10': [10.750, 250, [['10', .165], ['20', .250], ['30', .307], ['STD/40', .365], ['XS/60', .500], ['80', .594], ['100', .719], ['120', .844], ['140/XXS', 1.000], ['160', 1.125]]],
+  '12': [12.750, 300, [['10', .180], ['20', .250], ['30', .330], ['STD', .375], ['40', .406], ['XS', .500], ['60', .562], ['80', .688], ['100', .844], ['120/XXS', 1.000], ['140', 1.125], ['160', 1.312]]],
+  '14': [14, 350, [['10', .250], ['20', .312], ['STD/30', .375], ['40', .438], ['XS', .500], ['60', .594], ['80', .750], ['100', .938], ['120', 1.094], ['140', 1.250], ['160', 1.406]]],
+  '16': [16, 400, [['10', .250], ['20', .312], ['STD/30', .375], ['XS/40', .500], ['60', .656], ['80', .844], ['100', 1.031], ['120', 1.219], ['140', 1.438], ['160', 1.594]]],
+  '18': [18, 450, [['10', .250], ['20', .312], ['STD', .375], ['30', .438], ['XS', .500], ['40', .562], ['60', .750], ['80', .938], ['100', 1.156], ['120', 1.375], ['140', 1.562], ['160', 1.781]]],
+  '20': [20, 500, [['10', .250], ['STD/20', .375], ['XS/30', .500], ['40', .594], ['60', .812], ['80', 1.031], ['100', 1.281], ['120', 1.500], ['140', 1.750], ['160', 1.969]]],
+  '22': [22, 550, [['10', .250], ['STD/20', .375], ['XS/30', .500], ['60', .875], ['80', 1.125], ['100', 1.375], ['120', 1.625], ['140', 1.875], ['160', 2.125]]],
+  '24': [24, 600, [['10', .250], ['STD/20', .375], ['XS', .500], ['30', .562], ['40', .688], ['60', .969], ['80', 1.219], ['100', 1.531], ['120', 1.812], ['140', 2.062], ['160', 2.344]]],
+  '26': [26, 650, [['10', .312], ['STD', .375], ['XS/20', .500]]],
+  '28': [28, 700, [['10', .312], ['STD', .375], ['XS/20', .500], ['30', .625]]],
+  '30': [30, 750, [['10', .312], ['STD', .375], ['XS/20', .500], ['30', .625]]],
+  '32': [32, 800, [['10', .312], ['STD', .375], ['XS/20', .500], ['30', .625], ['40', .688]]],
+  '34': [34, 850, [['10', .312], ['STD', .375], ['XS/20', .500], ['30', .625], ['40', .688]]],
+  '36': [36, 900, [['10', .312], ['STD', .375], ['XS/20', .500], ['30', .625], ['40', .750]]],
+  '42': [42, 1050, [['STD', .375], ['XS/20', .500], ['30', .625], ['40', .750]]],
+  '48': [48, 1200, [['STD', .375], ['XS', .500]]]
+};
+/* --- ASME B36.19 (stainless) 5S/10S/40S/80S --- */
+const B3619 = {
+  '1/2': [.065, .083, .109, .147], '3/4': [.065, .083, .113, .154], '1': [.065, .109, .133, .179], '1-1/4': [.065, .109, .140, .191],
+  '1-1/2': [.065, .109, .145, .200], '2': [.065, .109, .154, .218], '2-1/2': [.083, .120, .203, .276], '3': [.083, .120, .216, .300],
+  '3-1/2': [.083, .120, .226, .318], '4': [.083, .120, .237, .337], '5': [.109, .134, .258, .375], '6': [.109, .134, .280, .432],
+  '8': [.109, .148, .322, .500], '10': [.134, .165, .365, .500], '12': [.156, .180, .375, .500], '14': [.156, .188, .375, .500],
+  '16': [.165, .188, .375, .500], '18': [.165, .188, .375, .500], '20': [.188, .218, .375, .500], '22': [.188, .218, .375, .500],
+  '24': [.218, .250, .375, .500], '30': [.250, .312, null, null]
+};
+const NPS = ['1/2', '3/4', '1', '1-1/4', '1-1/2', '2', '2-1/2', '3', '3-1/2', '4', '5', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '42', '48'];
+/* Non-schedule standard wall thicknesses (B36.10M / API 5L), used for line pipe NPS >= 4 */
+const EXTRA = [.156, .172, .188, .203, .219, .250, .281, .312, .344, .375, .406, .438, .469, .500, .562, .625, .688, .750, .812, .875, .938, 1.000, 1.062, 1.125, 1.188, 1.250];
+
+/* --- Materials. grades: [name, SMYS psi, SMTS psi, B31.3 S (ksi) at 100/200/300/400 °F] --- */
+const cs = k => [k, k, k, k];
+const MATS = {
+  api5l: {
+    name: 'API 5L', std: 'API Spec 5L (edisi 47, 2026)', kind: 'cs', tol: 'api5l',
+    grades: [['A25 (PSL 1)', 25400, 45000, cs(15.0)], ['A / L210 (PSL 1)', 30500, 48600, cs(16.0)], ['B / L245', 35500, 60200, cs(20.0)],
+      ['X42 / L290', 42100, 60200, cs(20.0)], ['X46 / L320', 46400, 63100, cs(21.0)], ['X52 / L360', 52200, 66700, cs(22.0)],
+      ['X56 / L390', 56600, 71100, cs(23.7)], ['X60 / L415', 60200, 75400, cs(25.0)], ['X65 / L450', 65300, 77600, cs(25.7)],
+      ['X70 / L485', 70300, 82700, cs(27.3)], ['X80 / L555', 80500, 90600, cs(30.0)], ['X90 / L625 (PSL 2)', 90600, 100800, null],
+      ['X100 / L690 (PSL 2)', 100100, 110200, null], ['X120 / L830 (PSL 2)', 120400, 132700, null]],
+    def: 2,
+    types: [['SMLS', 'Seamless (SMLS)', 1, 1], ['ERW', 'ERW / HFW', 1, .85], ['SAW', 'SAWL / SAWH', 1, .95], ['CW', 'Furnace butt weld (CW)', .6, .6]]
+  },
+  a106: { name: 'ASTM A106', std: 'ASTM A106 / A530', kind: 'cs', tol: 'p125', def: 1,
+    grades: [['Grade A', 30000, 48000, cs(16.0)], ['Grade B', 35000, 60000, cs(20.0)], ['Grade C', 40000, 70000, cs(23.3)]],
+    types: [['SMLS', 'Seamless', 1, 1]] },
+  a53: { name: 'ASTM A53', std: 'ASTM A53 / A530', kind: 'cs', tol: 'p125', def: 1,
+    grades: [['Grade A', 30000, 48000, cs(16.0)], ['Grade B', 35000, 60000, cs(20.0)]],
+    types: [['S', 'Type S (seamless)', 1, 1], ['E', 'Type E (ERW)', 1, .85], ['F', 'Type F (furnace butt weld)', .6, .6]] },
+  a333: { name: 'ASTM A333', std: 'ASTM A333 / A999', kind: 'cs', tol: 'p125', def: 0,
+    grades: [['Grade 6', 35000, 60000, cs(20.0)]],
+    types: [['SMLS', 'Seamless', 1, 1], ['ERW', 'Welded (ERW)', 1, .85]] },
+  a312: { name: 'ASTM A312', std: 'ASTM A312 / A999', kind: 'ss', tol: 'p125', def: 1,
+    grades: [['TP304', 30000, 75000, [20.0, 20.0, 20.0, 18.6]], ['TP304L', 25000, 70000, [16.7, 16.7, 16.7, 15.8]],
+      ['TP316', 30000, 75000, [20.0, 20.0, 20.0, 19.3]], ['TP316L', 25000, 70000, [16.7, 16.7, 16.7, 15.7]]],
+    types: [['SMLS', 'Seamless', 1, 1], ['WDB', 'Welded, double butt (EFW)', .8, .85], ['WSB', 'Welded, single butt (EFW)', .8, .8], ['WRT', 'Welded, 100% radiografi', .8, 1]] }
+};
+
+/* B31.8 Table 841.1.6-1 */
+const LOC = [['1D1', 'Kelas 1 Divisi 1', .80], ['1D2', 'Kelas 1 Divisi 2', .72], ['2', 'Kelas 2', .60], ['3', 'Kelas 3', .50], ['4', 'Kelas 4', .40]];
+/* B31.8 Table 841.1.8-1 */
+const TDF = [[250, 1.000], [300, .967], [350, .933], [400, .900], [450, .867]];
+function tFactor(F) {
+  if (F <= 250) return { T: 1, ok: true };
+  if (F > 450) return { T: .867, ok: false };
+  for (let i = 1; i < TDF.length; i++) if (F <= TDF[i][0]) {
+    const [a, ta] = TDF[i - 1], [b, tb] = TDF[i];
+    return { T: ta + (tb - ta) * (F - a) / (b - a), ok: true, interp: F !== b };
+  }
+}
+/* ASME B16.5 Group 1.1 (carbon steel) pressure-temperature rating, psig */
+const B165 = { temps: [100, 200, 300, 400, 500],
+  cls: { 150: [285, 260, 230, 200, 170], 300: [740, 680, 655, 635, 605], 400: [990, 905, 875, 845, 805], 600: [1480, 1360, 1310, 1265, 1205],
+    900: [2220, 2035, 1965, 1900, 1810], 1500: [3705, 3395, 3270, 3170, 3015], 2500: [6170, 5655, 5450, 5280, 5025] } };
+function interp(xs, ys, x) {
+  if (x <= xs[0]) return ys[0];
+  for (let i = 1; i < xs.length; i++) if (x <= xs[i]) return ys[i - 1] + (ys[i] - ys[i - 1]) * (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
+  return null;
+}
+function flangeRating(cls, F) { const r = B165.cls[cls]; return r ? interp(B165.temps, r, F) : null; }
+
+/* B31.3 basic allowable stress, psi (null = out of tabulated range) */
+function allowS(g, F) {
+  if (!g[3]) return null;
+  if (F > 400) return null;
+  return interp([100, 200, 300, 400], g[3], F) * 1000;
+}
+
+/* Mill tolerance (minus side), returns {tol (inch), txt} for nominal t */
+function millTol(mode, t, manualPct) {
+  const MM = 1 / 25.4;
+  if (mode === 'manual') return { tol: t * manualPct / 100, txt: `−${fmt(manualPct, 1)}%`, pct: manualPct };
+  if (mode === 'api5l_w') {
+    if (t <= 5 * MM) return { tol: .5 * MM, txt: '−0,5 mm (t ≤ 5,0 mm)', pct: null };
+    if (t < 15 * MM) return { tol: .1 * t, txt: '−10% (5,0 < t < 15,0 mm)', pct: 10 };
+    return { tol: 1.5 * MM, txt: '−1,5 mm (t ≥ 15,0 mm)', pct: null };
+  }
+  if (mode === 'api5l_s') {
+    if (t <= 4 * MM) return { tol: .5 * MM, txt: '−0,5 mm (t ≤ 4,0 mm)', pct: null };
+    if (t < 25 * MM) return { tol: .125 * t, txt: '−12,5% (4,0 < t < 25,0 mm)', pct: 12.5 };
+    const a = Math.max(3 * MM, .1 * t);
+    return { tol: a, txt: '−3,0 mm atau −10% (t ≥ 25,0 mm)', pct: null };
+  }
+  return { tol: .125 * t, txt: '−12,5%', pct: 12.5 };
+}
+function fmt(v, d) { return Number(v).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+
+/* Smallest nominal t with t - tol(t) >= need (t - tol is monotonic for every mode) */
+function solveTn(need, mode, pct) {
+  let lo = need, hi = need * 2 + .1;
+  for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (m - millTol(mode, m, pct).tol >= need) hi = m; else lo = m; }
+  return hi;
+}
+
+function wtList(npsKey, mat, mode) {
+  const row = B3610[npsKey]; if (!row) return [];
+  const map = new Map();
+  const add = (t, lab) => { const k = t.toFixed(3); const e = map.get(k); if (e) { if (lab && !e.labels.includes(lab)) e.labels.push(lab); } else map.set(k, { t, labels: lab ? [lab] : [] }); };
+  if (mat.kind === 'ss' && B3619[npsKey]) ['5S', '10S', '40S', '80S'].forEach((l, i) => { const t = B3619[npsKey][i]; if (t) add(t, l); });
+  row[2].forEach(([l, t]) => add(t, 'Sch ' + l.replace(/^(STD|XS|XXS)/, '$1').replace(/^Sch /, '')));
+  if (false) {
+    const ts = row[2].map(x => x[1]); const lo = Math.min(...ts), hi = parseFloat(npsKey) >= 14 ? Math.max(...ts, 1.25) : Math.max(...ts);
+    EXTRA.forEach(t => { if (t >= lo - 1e-9 && t <= hi + 1e-9) add(t, ''); });
+  }
+  return [...map.values()].sort((a, b) => a.t - b.t).map(e => ({ t: e.t, label: e.labels.length ? e.labels.join(' · ').replace(/Sch (STD|XS|XXS)/g, '$1') : 'Non-schedule' }));
+}
+function schMinT(npsKey, mat, code) {
+  if (!code) return 0;
+  const row = B3610[npsKey]; if (!row) return 0;
+  if (mat.kind === 'ss' && B3619[npsKey]) { const idx = { '10': 1, '40': 2, '80': 3 }[code]; if (idx != null && B3619[npsKey][idx]) return B3619[npsKey][idx]; }
+  const find = re => { const r = row[2].find(([l]) => re.test(l)); return r ? r[1] : null; };
+  if (code === '10') return find(/^10\b/) || row[2][0][1];
+  if (code === '40') return find(/STD|40/) || 0;
+  if (code === '80') return find(/XS|80/) || 0;
+  return 0;
+}
+
+/* Main calculation. st = normalized inputs */
+function calc(st) {
+  const mat = MATS[st.spec], g = mat.grades[st.grade] || mat.grades[mat.def], ty = mat.types[st.type] || mat.types[0];
+  const row = B3610[st.nps];
+  const D = st.odMode === 'custom' && st.odCustom > 0 ? st.odCustom : row[0];
+  const P = st.P, Tf = st.Tf, warn = [], info = [];
+  const b318 = st.code === 'b318';
+  const S = g[1];
+  let tm, f = {};
+  const tolMode = st.tolMode === 'manual' ? 'manual' : mat.tol === 'api5l' ? (ty[0] === 'SMLS' ? 'api5l_s' : 'api5l_w') : 'p125';
+  if (b318) {
+    const loc = LOC.find(l => l[0] === st.loc) || LOC[4];
+    const F = st.fOver ? st.fVal : loc[2];
+    const E = st.eOver ? st.eVal : ty[2];
+    const tf = tFactor(Tf), T = st.tOver ? st.tVal : tf.T;
+    if (!tf.ok && !st.tOver) warn.push('Temperatur desain di atas 450 °F (232 °C). Tabel 841.1.8-1 ASME B31.8 tidak mencakupnya; isi T secara manual berdasarkan kajian material.');
+    tm = P * D / (2 * S * F * E * T);
+    f = { F, E, T, loc, tInterp: tf.interp };
+    if (st.loc !== '4' && !st.fOver) info.push('Periksa kembali kelas lokasi: area padat penduduk umumnya Kelas Lokasi 4 (F = 0,4).');
+    if (st.fOver) info.push(`Design factor diisi manual F = ${fmt(F, 2)} (mis. pengecualian Tabel 841.1.6-2 untuk stasiun/fabricated assemblies).`);
+    if (mat.kind === 'ss' && ty[0] !== 'SMLS' && !st.eOver) info.push('ASTM A312 welded tidak tercantum di Tabel 841.1.7-1 ASME B31.8; E diambil 0,80 (setara pipa EFW A134/A139). Verifikasi dengan code.');
+  } else {
+    const Sa = st.sOver ? st.sVal : allowS(g, Tf);
+    if (Sa == null) warn.push('Allowable stress S untuk grade/temperatur ini di luar tabel bawaan aplikasi. Isi S manual dari ASME B31.3 Tabel A-1.');
+    const SS = Sa || 1;
+    const E = st.eOver ? st.eVal : ty[3];
+    const W = st.wOver ? st.wVal : 1;
+    const Y = st.yOver ? st.yVal : .4;
+    tm = P * D / (2 * (SS * E * W + P * Y));
+    f = { Sa: SS, E, W, Y, Sok: Sa != null, PSE: P / (SS * E) };
+    const Samb = allowS(g, 100);
+    f.ratio = Samb && Sa ? Math.min(Samb / Sa, 6.5) : 1;
+    if (Tf > 800 && !st.wOver) warn.push('Temperatur > 800 °F: W dan Y dapat < 1 / ≠ 0,4 (Tabel 302.3.5-1 dan 304.1.1-1). Isi manual.');
+    if (!st.sOver && Sa != null && Tf > 100) info.push(`S = ${fmt(Sa / 1000, 1)} ksi diinterpolasi dari nilai bawaan pada ${fmt(Tf, 0)} °F. Verifikasi terhadap ASME B31.3 Tabel A-1 edisi berlaku.`);
+  }
+  const c = st.ca + st.mech;
+  const need = tm + c;
+  const tn = solveTn(need, tolMode, st.tolPct);
+  const tnTol = millTol(tolMode, tn, st.tolPct);
+  const list = wtList(st.nps, mat, st.wtMode);
+  const tMinSch = schMinT(st.nps, mat, st.minSch);
+  const rows = list.map(w => {
+    const mt = millTol(tolMode, w.t, st.tolPct);
+    const tmin = w.t - mt.tol, tcor = tmin - c;
+    return { ...w, tol: mt.tol, tolTxt: mt.txt, tmin, tcor, ok: tmin >= need - 1e-9, schOk: w.t >= tMinSch - 1e-9 };
+  });
+  let sel = null;
+  if (st.wtSel === 'custom' && st.wtCustom > 0) {
+    const mt = millTol(tolMode, st.wtCustom, st.tolPct);
+    sel = { t: st.wtCustom, label: 'Manual', tol: mt.tol, tolTxt: mt.txt, tmin: st.wtCustom - mt.tol, tcor: st.wtCustom - mt.tol - c, ok: st.wtCustom - mt.tol >= need - 1e-9, schOk: st.wtCustom >= tMinSch - 1e-9, manual: true };
+  } else if (st.wtSel && st.wtSel !== 'auto') {
+    sel = rows.find(r => r.t.toFixed(3) === st.wtSel) || null;
+    if (sel) sel = { ...sel, manual: true };
+  }
+  if (!sel) sel = rows.find(r => r.ok && r.schOk) || null;
+  const auto = rows.find(r => r.ok && r.schOk) || null;
+  rows.forEach(r => { r.sel = sel && Math.abs(r.t - sel.t) < 1e-6; r.auto = auto && Math.abs(r.t - auto.t) < 1e-6; });
+
+  // capacity & stresses for each row
+  const cap = t => {
+    const mt = millTol(tolMode, t, st.tolPct), tmin = t - mt.tol, tc = tmin - c;
+    if (b318) {
+      const fac = f.F * f.E * f.T;
+      return { maop: 2 * S * t / D * fac, mawp: tc > 0 ? 2 * S * tc / D * fac : 0, sh: P * D / (2 * t), shc: tc > 0 ? P * D / (2 * tc) : Infinity, allow: S * fac };
+    }
+    const sew = f.Sa * f.E * f.W;
+    const pOf = x => x > 0 ? 2 * sew * x / (D - 2 * f.Y * x) : 0;
+    return { maop: pOf(t), mawp: pOf(tc), sh: P * D / (2 * t), shc: tc > 0 ? P * D / (2 * tc) : Infinity, allow: sew };
+  };
+  rows.forEach(r => { const k = cap(r.t); r.mawp = k.mawp; r.maop = k.maop; r.pct = k.sh / S * 100; r.kgm = .0246615 * (D * 25.4 - r.t * 25.4) * r.t * 25.4; });
+
+  const out = { st, mat, g, ty, D, P, Tf, S, tm, c, need, tn, tnTol, tolMode, f, rows, sel, auto, warn, info, b318, tMinSch, checks: [] };
+  if (!sel) { warn.push('Tidak ada wall thickness standar pada daftar yang memenuhi tn untuk NPS ini. Naikkan grade material, ubah daftar WT, atau isi WT manual.'); return out; }
+
+  const k = cap(sel.t);
+  Object.assign(sel, { mawp: k.mawp, maop: k.maop, sh: k.sh, shc: k.shc, allow: k.allow, pct: k.sh / S * 100, pctc: k.shc / S * 100, kgm: .0246615 * (D - sel.t) * 25.4 * sel.t * 25.4 });
+  sel.ID = D - 2 * sel.t;
+  sel.Dt = D / sel.t;
+  out.wTot = st.L > 0 ? sel.kgm * st.L : null;
+  // test pressure
+  const kTest = b318 ? st.testK : st.testK * f.ratio;
+  out.Ptest = P * kTest; out.kTest = kTest;
+  out.shTest = out.Ptest * D / (2 * sel.t); out.pctTest = out.shTest / S * 100;
+  out.shTestMin = sel.tmin > 0 ? out.Ptest * D / (2 * sel.tmin) : Infinity; out.pctTestMin = out.shTestMin / S * 100;
+  // alternative thick wall
+  if (b318 && sel.Dt < 30) {
+    out.tmAlt = P * D / (2 * S * f.F * f.E * f.T + P);
+    info.push(`D/t = ${fmt(sel.Dt, 1)} < 30 (pipa berdinding tebal). ASME B31.8 841.1.1(b) mengizinkan rumus alternatif P = 2St/(D − t)·FET, yang memberi tm = ${fmt(out.tmAlt, 4)} in. Aplikasi tetap memakai Persamaan (1) yang lebih konservatif.`);
+  }
+  if (b318 && g[1] >= 70300) info.push('Grade X70 ke atas tidak cocok untuk servis asam (sour); kekerasan las lapangan bisa melampaui batas NACE/AMPP. Butuh WPS khusus.');
+  if (mat.kind === 'ss' && st.ca > 0) info.push('Material tahan korosi (stainless) tidak memerlukan corrosion allowance. Pertimbangkan CA = 0.');
+  if (mat.kind === 'cs' && st.ca === 0) info.push('Corrosion allowance 0 untuk baja karbon. Nilai umum pada perencanaan awal adalah 0,0625 in.');
+  if (st.flCls && B165.cls[st.flCls]) {
+    const Tr = st.flBasis === 'amb' ? 100 : Tf;
+    const r = flangeRating(st.flCls, Tr);
+    out.flRating = r; out.flT = Tr;
+    if (r != null && P > r + 1e-6) warn.push(`Tekanan desain ${fmt(P, 0)} psig melebihi rating flange ASME B16.5 Class ${st.flCls} Grup 1.1 pada ${Tr <= 100 ? '−20 s.d. 100' : fmt(Tr, 0)} °F (${fmt(r, 0)} psig).`);
+    if (r != null && P < r * .999) info.push(`Rating flange Class ${st.flCls} pada ${Tr <= 100 ? '−20 s.d. 100' : fmt(Tr, 0)} °F = ${fmt(r, 0)} psig. Catatan: jangan menaikkan tekanan desain hanya agar sama dengan rating flange bila melebihi MAOP yang dibutuhkan.`);
+    if (r == null) warn.push('Temperatur di luar tabel rating flange bawaan (≤ 500 °F).');
+  }
+  if (sel.manual && !sel.ok) warn.push('WT yang dipilih manual lebih tipis dari Thickness Necessary.');
+  if (sel.manual && auto && sel.t > auto.t + 1e-6) info.push(`WT terpilih lebih tebal dari WT minimum yang memenuhi (${fmt(auto.t, 3)} in, ${auto.label}). Pastikan alasannya (beban eksternal, HDD, ketersediaan, PMC).`);
+
+  // checks
+  const C = out.checks;
+  C.push({ k: 'WT terpilih ≥ Thickness Necessary', v: `${fmt(sel.t, 3)} in`, lim: `≥ ${fmt(tn, 4)} in`, ok: sel.ok, uc: tn / sel.t });
+  C.push({ k: 'Tebal minimum sisa (t − mill tol − c) ≥ tm', v: `${fmt(sel.tcor, 4)} in`, lim: `≥ ${fmt(tm, 4)} in`, ok: sel.tcor >= tm - 1e-9, uc: tm / Math.max(sel.tcor, 1e-9) });
+  C.push({ k: b318 ? 'Hoop stress (t sisa) ≤ F·E·T·SMYS' : 'Tekanan desain ≤ MAWP (t sisa)', v: b318 ? `${fmt(sel.shc, 0)} psi` : `${fmt(P, 0)} psig`, lim: b318 ? `≤ ${fmt(sel.allow, 0)} psi` : `≤ ${fmt(sel.mawp, 0)} psig`, ok: b318 ? sel.shc <= sel.allow + 1e-6 : P <= sel.mawp + 1e-6, uc: b318 ? sel.shc / sel.allow : P / sel.mawp });
+  if (st.minSch) C.push({ k: 'WT ≥ schedule minimum (Piping Material Class)', v: `${fmt(sel.t, 3)} in`, lim: `≥ ${fmt(out.tMinSch, 3)} in`, ok: sel.schOk, uc: out.tMinSch / sel.t });
+  if (b318) C.push({ k: 'Dinding tipis, D/t > 30 (syarat Persamaan 1)', v: fmt(sel.Dt, 1), lim: '> 30', ok: sel.Dt > 30, info: true, uc: 30 / sel.Dt });
+  else {
+    C.push({ k: 'tm < D/6 (syarat Persamaan 3)', v: `${fmt(tm, 4)} in`, lim: `< ${fmt(D / 6, 3)} in`, ok: tm < D / 6, uc: tm / (D / 6) });
+    C.push({ k: 'P/(S·E) ≤ 0,385', v: fmt(f.PSE, 3), lim: '≤ 0,385', ok: f.PSE <= .385, uc: f.PSE / .385 });
+  }
+  if (st.dtLim > 0) C.push({ k: 'D/t ≤ batas handling / konstruksi', v: fmt(sel.Dt, 1), lim: `≤ ${fmt(st.dtLim, 0)}`, ok: sel.Dt <= st.dtLim, uc: sel.Dt / st.dtLim });
+  C.push({ k: `Hoop stress uji tekan (${fmt(out.kTest, 2)}× P) ≤ 100% SMYS`, v: `${fmt(out.pctTest, 1)}% SMYS`, lim: '≤ 100%', ok: out.pctTest <= 100, warnIf: out.pctTest > 90, uc: out.pctTest / 100 });
+  if (out.flRating != null) C.push({ k: `P desain ≤ rating flange Class ${st.flCls}`, v: `${fmt(P, 0)} psig`, lim: `≤ ${fmt(out.flRating, 0)} psig`, ok: P <= out.flRating + 1e-6, uc: P / out.flRating });
+  out.fail = C.filter(x => !x.ok && !x.info).length;
+  return out;
+}
+
+/* Summary across all NPS with the same inputs */
+function calcAll(st) {
+  return NPS.map(n => {
+    const r = calc({ ...st, nps: n, odMode: 'nps', wtSel: 'auto' });
+    return { nps: n, dn: B3610[n][1], D: r.D, tm: r.tm, tn: r.tn, sel: r.sel, fail: r.fail };
+  });
+}
+
+return { BAR, MPA, B3610, B3619, NPS, MATS, LOC, TDF, B165, tFactor, flangeRating, allowS, millTol, calc, calcAll, wtList, fmt };
+})();
+</script>
+<script>
+const HV_W=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,556,222,556,333,1000,556,556,333,1000,667,333,1000,556,611,556,556,222,222,333,333,350,556,1000,333,1000,500,333,944,556,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500];
+const HVB_W=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,556,278,556,500,1000,556,556,333,1000,667,333,1000,556,611,556,556,278,278,500,500,350,556,1000,333,1000,556,333,944,556,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556];
+/* ==== Minimal PDF writer: Helvetica (WinAnsi), lines, rects, JPEG images. No external library. ==== */
+const PDFW = (() => {
+'use strict';
+const CP = { '€': 128, '‚': 130, 'ƒ': 131, '„': 132, '…': 133, '†': 134, '‡': 135, 'ˆ': 136, '‰': 137, 'Š': 138, '‹': 139, 'Œ': 140, 'Ž': 142, '‘': 145, '’': 146, '“': 147, '”': 148, '•': 149, '–': 150, '—': 151, '˜': 152, '™': 153, 'š': 154, '›': 155, 'œ': 156, 'ž': 158, 'Ÿ': 159 };
+const SUB = { '≤': '<=', '≥': '>=', 'σ': 's', 'μ': 'µ', 'ν': 'v', 'φ': 'phi', 'α': 'a', '→': '->', '←': '<-', '″': '"', '′': "'", '⁻': '-', '⁸': '8', '⁴': '4', '⁶': '6', '⁰': '0', '↑': '^', '≈': '~', 'Σ': 'Sum', '√': 'sqrt', 'ₘ': 'm', '₁': '1', '₂': '2', '−': '-', 'Δ': 'd', 'θ': 'th', 'τ': 'tau', 'ρ': 'rho', 'γ': 'g', ' ': ' ', ' ': ' ', ' ': ' ' };
+function code(ch) {
+  const c = ch.codePointAt(0);
+  if (c >= 32 && c < 127) return c;
+  if (c >= 160 && c <= 255) return c;
+  if (CP[ch]) return CP[ch];
+  if (c === 9 || c === 10 || c === 13) return 32;
+  return 63;
+}
+function enc(str) {
+  const out = [];
+  for (const ch of String(str)) {
+    const s = SUB[ch];
+    if (s !== undefined) { for (const c2 of s) out.push(code(c2)); continue; }
+    out.push(code(ch));
+  }
+  return out;
+}
+function esc(bytes) {
+  let s = '';
+  for (const c of bytes) {
+    if (c === 40 || c === 41 || c === 92) s += '\\' + String.fromCharCode(c);
+    else if (c > 126 || c < 32) s += '\\' + c.toString(8).padStart(3, '0');
+    else s += String.fromCharCode(c);
+  }
+  return s;
+}
+const ascii = s => { const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 255; return u; };
+
+class Doc {
+  constructor() { this.W = 595.28; this.H = 841.89; this.k = 72 / 25.4; this.pages = []; this.imgs = []; this.p = null; }
+  addPage() { this.p = { ops: [] }; this.pages.push(this.p); return this.p; }
+  X(mm) { return (mm * this.k).toFixed(2); }
+  Y(mm) { return (this.H - mm * this.k).toFixed(2); }
+  rgb(c) { return c.map(v => (v / 255).toFixed(3)).join(' '); }
+  tw(str, size, bold) {
+    const W = bold ? HVB_W : HV_W; let s = 0;
+    for (const b of enc(str)) s += W[b - 32] || 556;
+    return s / 1000 * size / this.k;
+  }
+  text(str, x, y, o = {}) {
+    const size = o.size || 9;
+    let xx = x;
+    if (o.align === 'right') xx = x - this.tw(str, size, o.bold);
+    else if (o.align === 'center') xx = x - this.tw(str, size, o.bold) / 2;
+    this.p.ops.push(`BT /${o.bold ? 'F2' : 'F1'} ${size} Tf ${this.rgb(o.color || [20, 32, 43])} rg ${this.X(xx)} ${this.Y(y)} Td (${esc(enc(str))}) Tj ET`);
+  }
+  rect(x, y, w, h, o = {}) {
+    const op = [];
+    if (o.fill) op.push(`${this.rgb(o.fill)} rg`);
+    if (o.stroke) op.push(`${this.rgb(o.stroke)} RG ${((o.lw || .3) * this.k).toFixed(2)} w`);
+    op.push(`${this.X(x)} ${this.Y(y + h)} ${(w * this.k).toFixed(2)} ${(h * this.k).toFixed(2)} re ${o.fill && o.stroke ? 'B' : o.fill ? 'f' : 'S'}`);
+    this.p.ops.push('q ' + op.join(' ') + ' Q');
+  }
+  line(x1, y1, x2, y2, o = {}) {
+    const dash = o.dash ? `[${o.dash.map(v => (v * this.k).toFixed(2)).join(' ')}] 0 d ` : '';
+    this.p.ops.push(`q ${this.rgb(o.color || [200, 209, 216])} RG ${((o.lw || .3) * this.k).toFixed(2)} w ${dash}${this.X(x1)} ${this.Y(y1)} m ${this.X(x2)} ${this.Y(y2)} l S Q`);
+  }
+  addJpeg(bytes, w, h) { this.imgs.push({ bytes, w, h }); return this.imgs.length; }
+  image(n, x, y, w, h) { this.p.ops.push(`q ${(w * this.k).toFixed(2)} 0 0 ${(h * this.k).toFixed(2)} ${this.X(x)} ${this.Y(y + h)} cm /Im${n} Do Q`); }
+  output(meta = {}) {
+    const chunks = []; let off = 0; const offs = [];
+    const push = s => { const u = typeof s === 'string' ? ascii(s) : s; chunks.push(u); off += u.length; };
+    const obj = (n, body) => { offs[n] = off; push(`${n} 0 obj\n`); push(body); push('\nendobj\n'); };
+    const stream = (n, dict, bytes) => { offs[n] = off; push(`${n} 0 obj\n<< ${dict} /Length ${bytes.length} >>\nstream\n`); push(bytes); push('\nendstream\nendobj\n'); };
+    push('%PDF-1.4\n'); push(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    const nImg = this.imgs.length, first = 6 + nImg, nPg = this.pages.length;
+    const kids = this.pages.map((_, i) => `${first + i * 2} 0 R`).join(' ');
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, `<< /Type /Pages /Kids [${kids}] /Count ${nPg} >>`);
+    obj(3, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    obj(4, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const pstr = s => '(' + esc(enc(String(s || '').replace(/[–—]/g, '-'))) + ')';
+    obj(5, `<< /Title ${pstr(meta.title)} /Author ${pstr(meta.author)} /Subject ${pstr(meta.subject)} /Creator (Kalkulator Ketebalan Dinding Pipa) /Producer (Kalkulator Ketebalan Dinding Pipa) >>`);
+    this.imgs.forEach((im, i) => stream(6 + i, `/Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode`, im.bytes));
+    const xo = this.imgs.map((_, i) => `/Im${i + 1} ${6 + i} 0 R`).join(' ');
+    this.pages.forEach((pg, i) => {
+      const n = first + i * 2;
+      obj(n, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.W} ${this.H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> ${xo ? `/XObject << ${xo} >>` : ''} >> /Contents ${n + 1} 0 R >>`);
+      stream(n + 1, '', ascii(pg.ops.join('\n')));
+    });
+    const N = first + nPg * 2;
+    const xref = off;
+    let x = `xref\n0 ${N}\n0000000000 65535 f \n`;
+    for (let i = 1; i < N; i++) x += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+    push(x);
+    push(`trailer\n<< /Size ${N} /Root 1 0 R /Info 5 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    const out = new Uint8Array(off); let p = 0;
+    for (const c of chunks) { out.set(c, p); p += c.length; }
+    return out;
+  }
+}
+return { Doc, enc };
+})();
+
+</script>
+<script>
+/* ==== UI ==== */
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const nf = (v, d = 1) => (v == null || !isFinite(v)) ? '–' : Number(v).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MMI = 25.4;
+const npsTxt = n => n.replace('-', ' ').replace('1/2', '½').replace('3/4', '¾').replace('1/4', '¼');
+let RES = null, ALL = null;
+
+/* --- populate --- */
+const specSel = $('spec'), gradeSel = $('grade'), typeSel = $('ptype'), npsSel = $('nps'), locSel = $('loc');
+Object.entries(WT.MATS).forEach(([k, m]) => specSel.add(new Option(m.name + (m.kind === 'ss' ? ' (stainless)' : ''), k)));
+WT.NPS.forEach(n => npsSel.add(new Option(`NPS ${npsTxt(n)} · DN ${WT.B3610[n][1]}`, n)));
+WT.LOC.forEach(l => locSel.add(new Option(`${l[1]} (F = ${nf(l[2], 2)})`, l[0])));
+specSel.value = 'api5l'; npsSel.value = '8'; locSel.value = '4';
+function fillMat(keepGrade) {
+  const m = WT.MATS[specSel.value];
+  const pg = keepGrade ? gradeSel.value : null, pt = keepGrade ? typeSel.value : null;
+  gradeSel.innerHTML = ''; m.grades.forEach((g, i) => gradeSel.add(new Option(`${g[0]} · ${nf(g[1], 0)} psi`, i)));
+  typeSel.innerHTML = ''; m.types.forEach((t, i) => typeSel.add(new Option(t[1], i)));
+  gradeSel.value = pg != null && m.grades[pg] ? pg : m.def;
+  typeSel.value = pt != null && m.types[pt] ? pt : (specSel.value === 'api5l' ? 1 : 0);
+}
+fillMat(false);
+$('smysTbl').innerHTML = WT.MATS.api5l.grades.map(g => `<tr><td>${esc(g[0].replace(/ \(PSL \d\)/, ''))}</td><td class="n">${Math.round(g[1] / 145.0377)}</td><td class="n">${nf(g[1], 0)}</td></tr>`).join('');
+(() => { const d = new Date(); $('docDate').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+
+/* --- state --- */
+const radio = n => document.querySelector(`input[name="${n}"]:checked`).value;
+const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+const inch = (id, uid) => num(id) / ($(uid).value === 'mm' ? MMI : 1);
+function readState() {
+  const pu = $('pUnit').value, P = num('pVal') * (pu === 'bar' ? WT.BAR : pu === 'mpa' ? WT.MPA : 1);
+  const Tf = $('tUnit').value === 'C' ? num('tVal') * 9 / 5 + 32 : num('tVal');
+  const code = radio('code');
+  return {
+    code, sys: radio('sys'), spec: specSel.value, grade: +gradeSel.value, type: +typeSel.value, nps: npsSel.value,
+    odMode: $('odMode').value, odCustom: inch('odCustom', 'odUnit'), L: 0,
+    P, Tf, flCls: $('flCls').value,
+    loc: locSel.value, fOver: $('fOver').checked, fVal: num('fVal'), eOver: code === 'b318' ? $('eOver').checked : $('e3Over').checked,
+    eVal: code === 'b318' ? num('eVal') : num('e3Val'), tOver: $('tOver').checked, tVal: num('tdVal'),
+    sOver: $('sOver').checked, sVal: num('sVal'), wOver: $('wOver').checked, wVal: num('wVal'), yOver: $('yOver').checked, yVal: num('yVal'),
+    ca: inch('caVal', 'caUnit'), mech: inch('mechVal', 'mechUnit'), tolMode: $('tolMode').value, tolPct: num('tolPct'),
+    wtMode: 'sch', flBasis: $('flBasis').value, minSch: $('minSch').value, wtSel: $('wtSel').value || 'auto', wtCustom: inch('wtCustom', 'wtUnit'),
+    testK: num('testK') || 1.5, dtLim: num('dtLim')
+  };
+}
+function ui() {
+  const code = radio('code');
+  $('fac318').hidden = code !== 'b318'; $('fac313').hidden = code !== 'b313';
+  $('segSys').hidden = code !== 'b318';
+  $('facCode').textContent = code === 'b318' ? 'B31.8' : 'B31.3';
+  $('codeHint').textContent = code === 'b318'
+    ? 'Gas bumi: tm = PD / 2SFET. Untuk pipa penyalur transmisi/distribusi maupun perpipaan stasiun.'
+    : 'Selain gas bumi (utility, udara, air, LNG): tm = PD / 2(SEW + PY).';
+  const man = $('odMode').value === 'custom', od = $('odCustom');
+  od.readOnly = !man;
+  if (!man) { const D0 = WT.B3610[npsSel.value][0]; od.value = $('odUnit').value === 'mm' ? +(D0 * MMI).toFixed(2) : D0; }
+  $('odNote').textContent = man ? 'isi manual' : 'otomatis dari NPS; pilih "Isi manual" untuk mengubah';
+  $('rowTol').hidden = $('tolMode').value !== 'manual';
+  $('rowWt').hidden = $('wtSel').value !== 'custom';
+  [['fOver', 'fVal'], ['eOver', 'eVal'], ['tOver', 'tdVal'], ['sOver', 'sVal'], ['e3Over', 'e3Val'], ['wOver', 'wVal'], ['yOver', 'yVal']].forEach(([c, v]) => { $(v).readOnly = !$(c).checked; });
+  const m = WT.MATS[specSel.value];
+  $('tolNote').textContent = $('tolMode').value === 'manual' ? (m.tol === 'api5l' ? 'default 10%' : 'default 10%; spesifikasi ' + m.std.split('/ ')[1] + ' = 12,5%') : m.tol === 'api5l' ? 'API 5L Tabel 11 (bergantung t)' : '−12,5% (' + m.std.split('/ ')[1] + ')';
+  const g = m.grades[+gradeSel.value];
+  $('gradeNote').textContent = `SMYS ${nf(g[1], 0)} psi · SMTS ${nf(g[2], 0)} psi`;
+  const row = WT.B3610[npsSel.value];
+  $('npsNote').textContent = `OD ${nf(row[0], 3)} in (${nf(row[0] * MMI, 1)} mm)`;
+}
+
+/* --- defaults on change --- */
+specSel.addEventListener('change', () => {
+  fillMat(false);
+  const ss = WT.MATS[specSel.value].kind === 'ss';
+  $('caVal').value = ss ? 0 : ($('caUnit').value === 'mm' ? 1.5875 : 0.0625);
+});
+document.querySelectorAll('input[name="sys"]').forEach(r => r.addEventListener('change', () => {
+  const pp = radio('sys') === 'pp';
+  $('minSch').value = pp ? '40' : '';
+}));
+document.querySelectorAll('input[name="code"]').forEach(r => r.addEventListener('change', () => {
+  $('minSch').value = radio('code') === 'b313' || radio('sys') === 'pp' ? '40' : '';
+}));
+['nps', 'spec'].forEach(id => $(id).addEventListener('change', () => { $('wtSel').value = 'auto'; }));
+// unit conversions keep the physical value
+function unitSwap(valId, unitId, conv) {
+  const u = $(unitId); u.dataset.prev = u.value;
+  u.addEventListener('change', () => { const v = parseFloat($(valId).value); if (isFinite(v)) $(valId).value = +conv(v, u.dataset.prev, u.value).toPrecision(6); u.dataset.prev = u.value; recalc(); });
+}
+const lenC = (v, a, b) => a === b ? v : a === 'in' ? v * MMI : v / MMI;
+['odCustom:odUnit', 'caVal:caUnit', 'mechVal:mechUnit', 'wtCustom:wtUnit'].forEach(s => { const [a, b] = s.split(':'); unitSwap(a, b, lenC); });
+unitSwap('tVal', 'tUnit', (v, a, b) => a === b ? v : a === 'F' ? (v - 32) * 5 / 9 : v * 9 / 5 + 32);
+unitSwap('pVal', 'pUnit', (v, a, b) => { const k = { psi: 1, bar: WT.BAR, mpa: WT.MPA }; return v * k[a] / k[b]; });
+$('btnFl').addEventListener('click', () => {
+  const st = readState(); if (!st.flCls) { $('flCls').focus(); return; }
+  const r = WT.flangeRating(st.flCls, st.flBasis === 'amb' ? 100 : st.Tf); if (r == null) return;
+  const k = { psi: 1, bar: WT.BAR, mpa: WT.MPA }[$('pUnit').value];
+  $('pVal').value = +(r / k).toPrecision(5); recalc();
+});
+
+/* --- render helpers --- */
+const pill = (t, cls) => `<span class="pill ${cls}">${esc(t)}</span>`;
+const ucb = (uc, ok, w) => { const c = !ok ? 'var(--bad)' : w ? 'var(--warn)' : 'var(--ok)'; return `<span class="ucbar"><i style="width:${Math.min(100, uc * 100)}%;background:${c}"></i></span>${nf(uc, 2)}`; };
+const fr = (a, b) => `<span class="fr"><span>${a}</span><span>${b}</span></span>`;
+const inMm = (t, d = 3) => `${nf(t, d)} in <span class="ref">(${nf(t * MMI, 2)} mm)</span>`;
+const pBoth = p => `${nf(p, 1)} psig <span class="ref">(${nf(p / WT.BAR, 2)} barg)</span>`;
+const tBoth = f => `${nf(f, 1)} °F <span class="ref">(${nf((f - 32) * 5 / 9, 1)} °C)</span>`;
+
+function renderXsec(R) {
+  const svg = $('xsec'), s = R.sel; if (!s) { svg.innerHTML = ''; return; }
+  const cx = 130, cy = 122, Ro = 96;
+  const k = Ro / (R.D / 2);
+  // exaggerate wall for legibility: wall drawn at max(true, 14% of R)
+  const tTrue = s.t * k, tDraw = Math.max(tTrue, Ro * .16), sc = tDraw / tTrue;
+  const ring = (r1, r2, fill) => `<path d="M ${cx - r1} ${cy} a ${r1} ${r1} 0 1 0 ${2 * r1} 0 a ${r1} ${r1} 0 1 0 ${-2 * r1} 0 Z M ${cx - r2} ${cy} a ${r2} ${r2} 0 1 1 ${2 * r2} 0 a ${r2} ${r2} 0 1 1 ${-2 * r2} 0 Z" fill="${fill}" fill-rule="evenodd"/>`;
+  const rMill = Ro - s.tol * k * sc, rTm = rMill - R.tm * k * sc, rIn = Ro - tDraw;
+  const rCa = rIn + R.c * k * sc;
+  let h = '';
+  h += ring(Ro, rMill, 'var(--mill)');
+  h += ring(rMill, Math.max(rTm, rCa), 'var(--tm)');
+  if (rTm > rCa + .3) h += ring(rTm, rCa, 'var(--spare)');
+  if (R.c > 0) h += ring(rCa, rIn, 'var(--ca)');
+  h += `<circle cx="${cx}" cy="${cy}" r="${Ro}" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="${rIn}" fill="none" stroke="var(--ink)" stroke-width="1"/>`;
+  h += `<line x1="${cx - Ro}" y1="${cy}" x2="${cx + Ro}" y2="${cy}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+  h += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" style="font:500 12px var(--f-mono);fill:var(--ink)">D ${nf(R.D, 3)} in</text>`;
+  h += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font:500 11px var(--f-mono);fill:var(--muted)">ID ${nf(s.ID, 3)} in</text>`;
+  h += `<text x="${cx}" y="246" text-anchor="middle" style="font:600 13px var(--f-mono);fill:var(--ink)">t = ${nf(s.t, 3)} in · ${esc(s.label)}</text>`;
+  if (sc > 1.05) h += `<text x="${cx}" y="258" text-anchor="middle" style="font:10px var(--f-body);fill:var(--muted)">tebal dinding diperbesar ×${nf(sc, 1)} agar terbaca</text>`;
+  svg.innerHTML = h;
+}
+function renderBar(R) {
+  const s = R.sel; if (!s) { $('bar').innerHTML = ''; $('barKeys').innerHTML = ''; return; }
+  const spare = Math.max(0, s.t - s.tol - R.c - R.tm);
+  const parts = [['tm (tekanan)', R.tm, 'var(--tm)'], ['c (allowance)', R.c, 'var(--ca)'], ['mill tolerance', s.tol, 'var(--mill)'], ['cadangan', spare, 'var(--spare)']];
+  const tot = parts.reduce((a, p) => a + p[1], 0) || 1;
+  $('bar').innerHTML = parts.map(p => p[1] > 0 ? `<i style="width:${p[1] / tot * 100}%;background:${p[2]}" title="${esc(p[0])}: ${nf(p[1], 4)} in"></i>` : '').join('');
+  $('barKeys').innerHTML = parts.map(p => `<span><i style="background:${p[2]}"></i>${esc(p[0])} ${nf(p[1], 4)} in</span>`).join('');
+  const over = s.t - s.tol - R.c - R.tm;
+  $('barNote').textContent = over >= -1e-9
+    ? `Tebal nominal ${nf(s.t, 3)} in = tm + c + mill tolerance + cadangan ${nf(spare, 4)} in (${nf(spare / s.t * 100, 1)}% dari t).`
+    : `Kurang ${nf(-over, 4)} in dari kebutuhan tm + c setelah dikurangi mill tolerance.`;
+}
+
+function renderSteps(R) {
+  const st = R.st, f = R.f, s = R.sel, b = R.b318, mat = R.mat, g = R.g;
+  const loc = b ? f.loc : null;
+  const rows = [];
+  const r = (a, v, ref) => rows.push(`<tr><td>${a}</td><td class="n">${v}</td><td class="ref">${ref}</td></tr>`);
+  r('Tekanan desain, <var>P</var>', pBoth(R.P), 'Data desain proyek');
+  r('Temperatur desain', tBoth(R.Tf), 'Data desain proyek');
+  r('Diameter luar, <var>D</var>', inMm(R.D, 3), st.odMode === 'custom' ? 'Input manual' : `ASME B36.10M, NPS ${npsTxt(st.nps)}`);
+  r('Material', `${esc(mat.name)} ${esc(g[0])}`, esc(mat.std));
+  if (b) {
+    r('SMYS, <var>S</var>', `${nf(R.S, 0)} psi`, `${esc(mat.name)} · ASME B31.8 App. D`);
+    r('Design factor, <var>F</var>', nf(f.F, 3), st.fOver ? 'Manual (Tabel 841.1.6-2)' : `${loc[1]} · Tabel 841.1.6-1`);
+    r('Longitudinal joint factor, <var>E</var>', nf(f.E, 2), st.eOver ? 'Manual' : `${esc(R.ty[1])} · Tabel 841.1.7-1`);
+    r('Temperature derating factor, <var>T</var>', nf(f.T, 3), st.tOver ? 'Manual' : `Tabel 841.1.8-1${f.tInterp ? ' (interpolasi)' : ''}`);
+  } else {
+    r('Allowable stress, <var>S</var>', `${nf(f.Sa, 0)} psi`, st.sOver ? 'Manual' : `ASME B31.3 Tabel A-1 pada ${nf(R.Tf, 0)} °F`);
+    r('Quality factor, <var>E</var>', nf(f.E, 2), st.eOver ? 'Manual' : `${esc(R.ty[1])} · Tabel A-3`);
+    r('Weld joint strength reduction, <var>W</var>', nf(f.W, 2), st.wOver ? 'Manual' : 'Tabel 302.3.5-1');
+    r('Coefficient, <var>Y</var>', nf(f.Y, 2), st.yOver ? 'Manual' : 'Tabel 304.1.1-1');
+  }
+  r('Corrosion allowance', inMm(st.ca, 4), mat.kind === 'ss' ? 'Stainless: tidak perlu CA' : 'Umum 0,0625 in (perencanaan awal)');
+  if (st.mech > 0) r('Mechanical allowance', inMm(st.mech, 4), 'ASME B1.20.1 / B31.3 302.4');
+  r('Mill / thickness tolerance, <var>m</var>', esc(R.tnTol.txt), st.tolMode === 'manual' ? 'Input (default 10%)' : (mat.tol === 'api5l' ? 'API 5L Tabel 11' : esc(mat.std.split('/ ')[1] || mat.std)));
+
+  const P = nf(R.P, 1), D = nf(R.D, 3);
+  const eq1 = b
+    ? `<span class="eq"><var>t</var><sub>m</sub> = ${fr('<var>P</var> · <var>D</var>', '2 · <var>S</var> · <var>F</var> · <var>E</var> · <var>T</var>')} = ${fr(`${P} × ${D}`, `2 × ${nf(R.S, 0)} × ${nf(f.F, 3)} × ${nf(f.E, 2)} × ${nf(f.T, 3)}`)} = <b>${nf(R.tm, 4)} in</b></span><span class="ref">Persamaan (1) · ASME B31.8 841.1.1(a) · ${nf(R.tm * MMI, 2)} mm</span>`
+    : `<span class="eq"><var>t</var><sub>m</sub> = ${fr('<var>P</var> · <var>D</var>', '2 (<var>S E W</var> + <var>P Y</var>)')} = ${fr(`${P} × ${D}`, `2 × (${nf(f.Sa, 0)} × ${nf(f.E, 2)} × ${nf(f.W, 2)} + ${P} × ${nf(f.Y, 2)})`)} = <b>${nf(R.tm, 4)} in</b></span><span class="ref">Persamaan (3) · ASME B31.3 304.1.2(a) · ${nf(R.tm * MMI, 2)} mm</span>`;
+  const pct = R.tnTol.pct;
+  const eq2 = pct != null
+    ? `<span class="eq"><var>t</var><sub>n</sub> = ${fr('<var>t</var><sub>m</sub> + <var>c</var>', '1 − <var>m</var>')} = ${fr(`${nf(R.tm, 4)} + ${nf(R.c, 4)}`, `1 − ${nf(pct / 100, 3)}`)} = <b>${nf(R.tn, 4)} in</b></span><span class="ref">Persamaan (2) · ${nf(R.tn * MMI, 2)} mm</span>`
+    : `<span class="eq"><var>t</var><sub>n</sub> = <var>t</var><sub>m</sub> + <var>c</var> + toleransi = ${nf(R.tm, 4)} + ${nf(R.c, 4)} + ${nf(R.tnTol.tol, 4)} = <b>${nf(R.tn, 4)} in</b></span><span class="ref">Persamaan (2) dengan toleransi absolut ${esc(R.tnTol.txt)} · ${nf(R.tn * MMI, 2)} mm</span>`;
+  const selTxt = s
+    ? `<span class="eq">WT standar ≥ <var>t</var><sub>n</sub> ${nf(R.tn, 4)} in → <b>${nf(s.t, 3)} in (${nf(s.t * MMI, 2)} mm) · ${esc(s.label)}</b></span><span class="ref">${st.code === 'b313' || R.mat.kind === 'ss' ? 'ASME B36.19 / B36.10M' : 'ASME B36.10M'}${R.st.minSch ? ` · schedule minimum ${esc($('minSch').selectedOptions[0].text)}` : ''}${s.manual ? ' · dipilih manual' : ''}</span>`
+    : '<span class="eq">Tidak ada WT standar yang memenuhi.</span>';
+  $('steps').innerHTML = `
+    <div class="step"><div><h3>Data input</h3><div class="tw"><table><thead><tr><th>Parameter</th><th class="n">Nilai</th><th>Referensi</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></div></div>
+    <div class="step"><div><h3>Calculated Wall Thickness (t<sub>m</sub>)</h3><div class="eqbox">${eq1}</div></div></div>
+    <div class="step"><div><h3>Thickness Necessary (t<sub>n</sub>)</h3><div class="eqbox">${eq2}</div><p class="hint" style="margin-top:6px">c = corrosion allowance ${nf(st.ca, 4)} in${st.mech ? ` + mechanical allowance ${nf(st.mech, 4)} in` : ''} = ${nf(R.c, 4)} in</p></div></div>
+    <div class="step"><div><h3>Selected Wall Thickness</h3><div class="eqbox">${selTxt}</div>${s ? `<p class="hint" style="margin-top:6px">Kapasitas: MAOP (t nominal) ${nf(s.maop, 0)} psig · MAWP pada t sisa ${nf(s.tcor, 4)} in = ${nf(s.mawp, 0)} psig · hoop stress desain ${nf(s.pct, 1)}% SMYS · berat ${nf(s.kgm, 2)} kg/m.</p>` : ''}</div></div>`;
+}
+
+function renderChecks(R) {
+  const head = '<thead><tr><th>Kriteria</th><th class="n">Nilai</th><th class="n">Batas</th><th class="n">UC</th><th>Status</th></tr></thead>';
+  $('tblChecks').innerHTML = head + '<tbody>' + R.checks.map(c => {
+    const st = c.info ? pill(c.ok ? 'Info · OK' : 'Info · tebal', 'inf') : !c.ok ? pill('Tidak OK', 'bad') : c.warnIf ? pill('OK · >90%', 'warn') : pill('OK', 'ok');
+    return `<tr><td>${esc(c.k)}</td><td class="n">${esc(c.v)}</td><td class="n">${esc(c.lim)}</td><td class="n">${c.info ? '–' : ucb(c.uc, c.ok, c.warnIf)}</td><td>${st}</td></tr>`;
+  }).join('') + '</tbody>';
+}
+function renderCmp(R) {
+  const head = `<thead><tr><th>WT nominal</th><th>Schedule</th><th class="n">mm</th><th class="n">Mill tol.</th><th class="n">t sisa</th><th class="n">MAWP sisa</th><th class="n">σ<sub>h</sub> desain</th><th class="n">kg/m</th><th>Status</th></tr></thead>`;
+  $('tblCmp').innerHTML = head + '<tbody>' + R.rows.map(r => {
+    const st = !r.ok ? pill('< tn', 'bad') : !r.schOk ? pill('< sch min', 'warn') : r.auto ? pill('Minimum memenuhi', 'ok') : pill('OK', 'ok');
+    return `<tr data-t="${r.t.toFixed(3)}" class="${r.sel ? 'on' : ''}${!r.ok ? ' dim' : ''}" style="cursor:pointer"><td class="n">${nf(r.t, 3)} in</td><td>${esc(r.label)}</td><td class="n">${nf(r.t * MMI, 2)}</td><td class="n">${nf(r.tol, 4)}</td><td class="n">${nf(r.tcor, 4)}</td><td class="n">${nf(r.mawp, 0)} psig</td><td class="n">${nf(r.pct, 1)}%</td><td class="n">${nf(r.kgm, 2)}</td><td>${st}</td></tr>`;
+  }).join('') + '</tbody>';
+}
+$('tblCmp').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-t]'); if (!tr) return;
+  $('wtSel').value = RES && RES.auto && RES.auto.t.toFixed(3) === tr.dataset.t ? 'auto' : tr.dataset.t; recalc();
+});
+function renderAll(A) {
+  const head = '<thead><tr><th>NPS</th><th class="n">DN</th><th class="n">OD (in)</th><th class="n">t<sub>m</sub> (in)</th><th class="n">t<sub>n</sub> (in)</th><th class="n">WT (in)</th><th class="n">WT (mm)</th><th>Schedule</th><th class="n">MAWP sisa</th><th class="n">kg/m</th></tr></thead>';
+  $('tblAll').innerHTML = head + '<tbody>' + A.map(a => `<tr data-nps="${esc(a.nps)}" class="${a.nps === npsSel.value ? 'on' : ''}" style="cursor:pointer"><td>${npsTxt(a.nps)}</td><td class="n">${a.dn}</td><td class="n">${nf(a.D, 3)}</td><td class="n">${nf(a.tm, 4)}</td><td class="n">${nf(a.tn, 4)}</td>${a.sel ? `<td class="n"><b>${nf(a.sel.t, 3)}</b></td><td class="n">${nf(a.sel.t * MMI, 2)}</td><td>${esc(a.sel.label)}</td><td class="n">${nf(a.sel.mawp, 0)} psig</td><td class="n">${nf(a.sel.kgm, 2)}</td>` : '<td colspan="5">' + pill('Tidak ada WT memenuhi', 'bad') + '</td>'}</tr>`).join('') + '</tbody>';
+}
+$('tblAll').addEventListener('click', e => { const tr = e.target.closest('tr[data-nps]'); if (!tr) return; npsSel.value = tr.dataset.nps; $('odMode').value = 'nps'; $('wtSel').value = 'auto'; recalc(); $('hSum').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+function syncAutoFields(R) {
+  const f = R.f;
+  if (R.b318) {
+    if (!$('fOver').checked) $('fVal').value = f.loc[2];
+    if (!$('eOver').checked) $('eVal').value = R.ty[2];
+    if (!$('tOver').checked) $('tdVal').value = +f.T.toFixed(3);
+  } else {
+    if (!$('sOver').checked) $('sVal').value = f.Sok ? Math.round(f.Sa) : '';
+    if (!$('e3Over').checked) $('e3Val').value = R.ty[3];
+    if (!$('wOver').checked) $('wVal').value = 1;
+    if (!$('yOver').checked) $('yVal').value = .4;
+  }
+}
+function fillWtSel(R) {
+  const sel = $('wtSel'), cur = sel.value || 'auto';
+  sel.innerHTML = '';
+  sel.add(new Option(`Otomatis${R.auto ? ` → ${nf(R.auto.t, 3)} in (${R.auto.label})` : ''}`, 'auto'));
+  R.rows.forEach(r => sel.add(new Option(`${nf(r.t, 3)} in · ${r.label}${r.ok ? '' : ' (< tn)'}`, r.t.toFixed(3))));
+  sel.add(new Option('Manual…', 'custom'));
+  sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'auto';
+}
+
+function recalc(save = true) {
+  ui();
+  const st = readState();
+  let R = WT.calc(st);
+  fillWtSel(R);
+  if (st.wtSel !== $('wtSel').value) { st.wtSel = $('wtSel').value; R = WT.calc(st); }
+  RES = R;
+  ALL = WT.calcAll(st);
+  syncAutoFields(R);
+  const s = R.sel;
+  const v = $('verdict');
+  if (!s) { v.className = 'verdict bad'; v.textContent = 'Tidak ada WT memenuhi'; }
+  else if (R.fail) { v.className = 'verdict bad'; v.innerHTML = `${R.fail} pemeriksaan tidak OK`; }
+  else { v.className = 'verdict ok'; v.innerHTML = `WT ${nf(s.t, 3)} in · ${esc(s.label)} memenuhi`; }
+  $('sumNote').textContent = `${R.b318 ? 'ASME B31.8' : 'ASME B31.3'} · ${R.mat.name} ${R.g[0]} ${R.ty[1]} · NPS ${npsTxt(st.nps)} · ${nf(R.P, 0)} psig @ ${nf(R.Tf, 0)} °F`;
+  const card = (dt, dd, sm, cls = '') => `<div class="${cls}"><dt>${dt}</dt><dd>${dd}${sm ? `<small>${sm}</small>` : ''}</dd></div>`;
+  $('cards').innerHTML = [
+    card('WT terpilih', s ? `${nf(s.t, 3)} in` : '–', s ? `${nf(s.t * MMI, 2)} mm · ${esc(s.label)}` : 'tidak ada yang memenuhi', 'hero'),
+    card('Thickness necessary, tn', `${nf(R.tn, 4)} in`, `${nf(R.tn * MMI, 2)} mm`),
+    card('Calculated, tm', `${nf(R.tm, 4)} in`, `${nf(R.tm * MMI, 2)} mm`),
+    card('MAWP pada t sisa', s ? `${nf(s.mawp, 0)}` : '–', s ? `psig · ${nf(s.mawp / WT.BAR, 1)} barg` : ''),
+    card('Hoop stress desain', s ? `${nf(s.pct, 1)}%` : '–', s ? `SMYS · ${nf(s.sh, 0)} psi` : ''),
+    card('Uji tekan', s ? `${nf(R.Ptest, 0)}` : '–', s ? `psig (${nf(R.kTest, 2)}× P) · ${nf(R.pctTest, 1)}% SMYS` : ''),
+    card('Berat pipa', s ? `${nf(s.kgm, 2)}` : '–', s ? 'kg/m (pipa polos)' : ''),
+    card('D/t · ID', s ? `${nf(s.Dt, 1)}` : '–', s ? `ID ${nf(s.ID, 3)} in (${nf(s.ID * MMI, 1)} mm)` : '')
+  ].join('');
+  renderXsec(R); renderBar(R);
+  $('msgs').innerHTML = [...R.warn.map(t => `<li class="w">${esc(t)}</li>`), ...R.info.map(t => `<li class="i">${esc(t)}</li>`)].join('');
+  renderSteps(R); renderChecks(R); renderCmp(R); renderAll(ALL);
+  projUI();
+  if (save) draftSave();
+}
+
+/* --- project line --- */
+function readProj() {
+  const d = $('docDate').value; let dateTxt = d;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { const [y, m, dd] = d.split('-'); dateTxt = `${dd}/${m}/${y}`; }
+  return { name: $('projName').value.trim(), client: $('projClient').value.trim(), tag: $('lineTag').value.trim(), docNo: $('docNo').value.trim(), rev: $('docRev').value.trim() || '0', date: dateTxt, prep: $('prepBy').value.trim(), chk: $('chkBy').value.trim() };
+}
+function projUI() {
+  const p = readProj();
+  $('projLine').textContent = [p.name || 'Proyek belum diberi nama', p.tag, p.docNo ? 'No. ' + p.docNo : '', 'Rev. ' + p.rev, SC.active ? 'Skenario: ' + SC.active : ''].filter(Boolean).join(' · ');
+}
+
+/* --- form state --- */
+function formState() {
+  const st = {};
+  document.querySelectorAll('#frm input, #frm select').forEach(el => {
+    if (el.closest('#fsScen') || el.type === 'file') return;
+    if (el.type === 'radio') { if (el.checked) st['radio:' + el.name] = el.value; }
+    else if (el.type === 'checkbox') st[el.id] = el.checked;
+    else if (el.id) st[el.id] = el.value;
+  });
+  return st;
+}
+function applyState(st) {
+  Object.keys(st).filter(k => k.startsWith('radio:')).forEach(k => { const r = document.querySelector(`input[name="${k.slice(6)}"][value="${st[k]}"]`); if (r) r.checked = true; });
+  if (st.spec && WT.MATS[st.spec]) { specSel.value = st.spec; fillMat(false); }
+  const order = Object.keys(st).filter(k => !k.startsWith('radio:') && k !== 'spec' && k !== 'wtSel');
+  order.forEach(id => {
+    const el = $(id); if (!el || el.closest('#fsScen')) return;
+    if (el.type === 'checkbox') el.checked = !!st[id];
+    else if (el.tagName === 'SELECT') { if ([...el.options].some(o => o.value === st[id])) el.value = st[id]; }
+    else el.value = st[id];
+    if (el.dataset.prev !== undefined) el.dataset.prev = el.value;
+  });
+  recalc(false);
+  if (st.wtSel) { const w = $('wtSel'); if ([...w.options].some(o => o.value === st.wtSel)) { w.value = st.wtSel; } }
+  recalc(false);
+}
+const DRAFT = 'wt-calc-draft-v2';
+function draftSave() { try { localStorage.setItem(DRAFT, JSON.stringify(formState())); } catch (e) { /* no storage */ } }
+function draftLoad() { try { const s = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (s) { applyState(s); return true; } } catch (e) { /* ignore */ } return false; }
+
+$('frm').addEventListener('input', e => { if (e.target.closest('#fsScen')) return; if (e.target.tagName === 'SELECT' && e.type === 'input') return; recalc(); });
+$('frm').addEventListener('change', e => { if (e.target.closest('#fsScen') || e.target.type === 'file') return; recalc(); });
+
+/* =================== SCENARIOS =================== */
+var SC = { kind: 'memory', items: [], col: null, active: '', mem: {} };
+const LSKEY = 'wt-calc-scenarios-v1';
+const scId = () => 'sc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+const localRead = () => { try { return JSON.parse(localStorage.getItem(LSKEY) || '{}') || {}; } catch (e) { return null; } };
+const localWrite = obj => { try { localStorage.setItem(LSKEY, JSON.stringify(obj)); return true; } catch (e) { return false; } };
+function scSummary() {
+  const R = RES; if (!R) return {};
+  return { pipe: `NPS ${npsTxt(R.st.nps)} ${R.mat.name} ${R.g[0].split(' ')[0]}`, P: Math.round(R.P), wt: R.sel ? `${nf(R.sel.t, 3)} in ${R.sel.label}` : '–', fails: R.sel ? R.fail : 1, code: R.b318 ? 'B31.8' : 'B31.3' };
+}
+async function scInit() {
+  try {
+    if (window.claude && window.claude.use) {
+      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      const uid = user ? await user.id() : null;
+      if (db && uid) {
+        SC.col = db.doc('data/users/' + uid + '/wtcalc').collection('scenarios');
+        SC.kind = 'cloud';
+        SC.col.orderBy('savedAt', 'desc').onSnapshot(snap => { SC.items = snap.docs.map(d => ({ id: d.id, ...d.data() })); scRender(); },
+          () => { SC.kind = localRead() ? 'local' : 'memory'; scLoadLocal(); });
+        scRender(); return;
+      }
+    }
+  } catch (e) { /* fall through */ }
+  SC.kind = localRead() ? 'local' : 'memory';
+  scLoadLocal();
+}
+function scLoadLocal() {
+  const src = SC.kind === 'local' ? (localRead() || {}) : SC.mem;
+  SC.items = Object.entries(src).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+  scRender();
+}
+async function scPut(id, rec) {
+  if (SC.kind === 'cloud') {
+    try { await SC.col.doc(id).set(rec); return true; }
+    catch (e) { if (e && e.code === 'quota_exceeded') { scMsg('Penyimpanan penuh. Hapus beberapa skenario lama lalu coba lagi.'); return false; } SC.kind = localRead() ? 'local' : 'memory'; }
+  }
+  if (SC.kind === 'local') { const o = localRead() || {}; o[id] = rec; if (localWrite(o)) { scLoadLocal(); return true; } SC.kind = 'memory'; }
+  SC.mem[id] = rec; scLoadLocal(); return true;
+}
+async function scDel(id) {
+  if (SC.kind === 'cloud') { try { await SC.col.doc(id).delete(); return; } catch (e) { scMsg('Gagal menghapus. Coba lagi.'); return; } }
+  if (SC.kind === 'local') { const o = localRead() || {}; delete o[id]; localWrite(o); } else delete SC.mem[id];
+  scLoadLocal();
+}
+function scMsg(t) { $('scMsg').textContent = t; clearTimeout(scMsg.t); scMsg.t = setTimeout(() => { $('scMsg').textContent = ''; }, 4000); }
+function scRender() {
+  $('scWhere').textContent = SC.kind === 'cloud' ? 'Tersimpan di akun Claude Anda; bisa dibuka lagi dari perangkat lain.'
+    : SC.kind === 'local' ? 'Tersimpan di browser ini. Pakai Ekspor untuk memindahkan ke perangkat lain.'
+    : 'Penyimpanan permanen tidak tersedia di tampilan ini; skenario hilang saat halaman ditutup. Pakai Ekspor.';
+  $('scCount').textContent = SC.items.length ? `(${SC.items.length})` : '';
+  const ul = $('scList');
+  if (!SC.items.length) { ul.innerHTML = '<li class="sc-empty">Belum ada skenario. Atur input, beri nama, lalu klik Simpan.</li>'; return; }
+  ul.innerHTML = SC.items.map(it => {
+    const s = it.summary || {}, d = it.savedAt ? new Date(it.savedAt) : null;
+    const when = d ? d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    const meta = [s.pipe, s.P ? `${s.P} psig` : '', s.wt, when].filter(Boolean).join(' · ');
+    return `<li class="sc-item${it.name === SC.active ? ' on' : ''}" data-id="${esc(it.id)}"><i class="dot ${s.fails ? 'bad' : 'ok'}"></i><div class="sc-main"><b>${esc(it.name || 'Tanpa nama')}</b><span>${esc(meta)}</span></div><button type="button" data-act="open">Buka</button><button type="button" data-act="del" class="sc-del" aria-label="Hapus ${esc(it.name || '')}">✕</button></li>`;
+  }).join('');
+}
+$('scList').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const li = b.closest('.sc-item'), it = SC.items.find(x => x.id === li.dataset.id); if (!it) return;
+  if (b.dataset.act === 'open') { applyState(it.data || {}); SC.active = it.name; $('scName').value = it.name; projUI(); scRender(); draftSave(); scMsg(`Skenario "${it.name}" dibuka.`); }
+  else {
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Hapus?'; b.classList.add('danger'); setTimeout(() => { if (b.isConnected) { b.dataset.confirm = ''; b.textContent = '✕'; b.classList.remove('danger'); } }, 3500); return; }
+    await scDel(it.id); if (SC.active === it.name) { SC.active = ''; projUI(); } scMsg(`Skenario "${it.name}" dihapus.`);
+  }
+});
+$('btnScSave').addEventListener('click', async () => {
+  const name = $('scName').value.trim();
+  if (!name) { scMsg('Isi nama skenario dulu, mis. "Opsi A – X52".'); $('scName').focus(); return; }
+  const ex = SC.items.find(x => (x.name || '').toLowerCase() === name.toLowerCase());
+  const rec = { name, savedAt: new Date().toISOString(), data: formState(), summary: scSummary(), v: 1 };
+  const btn = $('btnScSave'); btn.disabled = true;
+  const ok = await scPut(ex ? ex.id : scId(), rec);
+  btn.disabled = false;
+  if (ok) { SC.active = name; projUI(); scRender(); scMsg(ex ? `Skenario "${name}" diperbarui.` : `Skenario "${name}" disimpan.`); }
+});
+$('btnScNew').addEventListener('click', () => { SC.active = ''; $('scName').value = ''; projUI(); scRender(); scMsg('Input tetap; beri nama baru lalu Simpan untuk skenario baru.'); $('scName').focus(); });
+$('btnScExport').addEventListener('click', async () => {
+  const payload = { app: 'wt-calc', v: 1, exportedAt: new Date().toISOString(), current: { name: SC.active || $('scName').value.trim() || 'Saat ini', data: formState() }, scenarios: SC.items.map(({ id, ...r }) => r) };
+  const fname = `Skenario WT - ${(readProj().name || 'proyek').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)}.json`;
+  const r = await deliver(JSON.stringify(payload, null, 2), fname, 'application/json');
+  scMsg(r);
+});
+$('btnScImport').addEventListener('click', () => $('fileImport').click());
+$('fileImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    const list = Array.isArray(j.scenarios) ? j.scenarios : [];
+    for (const rec of list) if (rec && rec.data) await scPut(scId(), { ...rec, savedAt: rec.savedAt || new Date().toISOString() });
+    if (j.current && j.current.data) applyState(j.current.data);
+    scMsg(`Impor selesai: ${list.length} skenario.`);
+  } catch (err) { scMsg('File tidak bisa dibaca. Pastikan file .json hasil Ekspor.'); }
+});
+
+/* =================== FILE DELIVERY =================== */
+let DL = null;
+(async () => { try { if (window.claude && window.claude.use) DL = await window.claude.use('downloads'); } catch (e) { DL = null; } })();
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function deliver(data, fname, type) {
+  const blob = new Blob([data], { type });
+  if (DL) {
+    try { const r = await DL.save({ filename: fname, data: blob }); return r && r.status === 'delivered' ? 'File terkirim.' : 'File tersimpan.'; }
+    catch (e) {
+      const c = e && e.code;
+      if (c === 'declined') return 'Unduhan dibatalkan.';
+      if (c === 'rate_limited') return 'Masih ada konfirmasi unduhan yang terbuka. Coba lagi sebentar.';
+    }
+  }
+  if (IS_IOS && navigator.canShare) {
+    try { const file = new File([blob], fname, { type }); if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: fname }); return 'File dibagikan.'; } }
+    catch (e) { if (e && e.name === 'AbortError') return 'Dibatalkan.'; }
+  }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = fname; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return 'File diunduh oleh browser.';
+}
+
+/* =================== COPY SUMMARY =================== */
+function summaryText() {
+  const R = RES, s = R.sel, p = readProj();
+  const L = [`KALKULASI KETEBALAN DINDING PIPA – ${p.name || '-'}`, p.tag ? `Line: ${p.tag}` : '', `Code: ${R.b318 ? 'ASME B31.8' : 'ASME B31.3'} | ${R.mat.name} ${R.g[0]} ${R.ty[1]}`,
+    `NPS ${npsTxt(R.st.nps)}, D = ${nf(R.D, 3)} in | P = ${nf(R.P, 1)} psig (${nf(R.P / WT.BAR, 2)} barg) | T = ${nf(R.Tf, 1)} °F`,
+    R.b318 ? `S = ${nf(R.S, 0)} psi, F = ${nf(R.f.F, 3)}, E = ${nf(R.f.E, 2)}, T = ${nf(R.f.T, 3)}` : `S = ${nf(R.f.Sa, 0)} psi, E = ${nf(R.f.E, 2)}, W = ${nf(R.f.W, 2)}, Y = ${nf(R.f.Y, 2)}`,
+    `c = ${nf(R.c, 4)} in | mill tol ${R.tnTol.txt}`,
+    `tm = ${nf(R.tm, 4)} in | tn = ${nf(R.tn, 4)} in`,
+    s ? `WT terpilih = ${nf(s.t, 3)} in (${nf(s.t * MMI, 2)} mm) ${s.label} | MAWP sisa ${nf(s.mawp, 0)} psig | ${nf(s.pct, 1)}% SMYS | ${nf(s.kgm, 2)} kg/m` : 'Tidak ada WT standar yang memenuhi',
+    `Status: ${!s ? 'TIDAK OK' : R.fail ? R.fail + ' pemeriksaan tidak OK' : 'semua pemeriksaan OK'}`];
+  return L.filter(Boolean).join('\n');
+}
+$('btnCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(summaryText()); $('copyMsg').textContent = 'Ringkasan disalin.'; }
+  catch (e) { $('copyMsg').textContent = 'Clipboard tidak tersedia di tampilan ini.'; }
+  setTimeout(() => { $('copyMsg').textContent = ''; }, 3000);
+});
+
+/* =================== PDF =================== */
+function inputRows() {
+  const rows = [];
+  document.querySelectorAll('#frm fieldset').forEach(fs => {
+    if (fs.id === 'fsProj' || fs.id === 'fsScen') return;
+    if (fs.querySelector('#fac318') && false) return;
+    rows.push({ grp: fs.querySelector('legend').childNodes[0].textContent.trim() });
+    fs.querySelectorAll('.seg').forEach(seg => {
+      if (seg.hidden) return;
+      const ch = seg.querySelector('input:checked'); if (ch) rows.push({ cells: [{ t: seg.getAttribute('aria-label') }, { t: seg.querySelector(`label[for="${ch.id}"]`).childNodes[0].textContent.trim() }, { t: '' }] });
+    });
+    fs.querySelectorAll('.f').forEach(f => {
+      if (f.closest('[hidden]')) return;
+      const lab = f.querySelector('label'), ctl = f.querySelector('input[type=number],input[type=text],select'); if (!ctl) return;
+      const span = lab.querySelector('span') || lab, small = span.querySelector('small');
+      const name = [...span.childNodes].filter(n => n.nodeType === 3 || n.tagName === 'SUB').map(n => n.textContent).join('').trim();
+      let v = ctl.tagName === 'SELECT' ? ctl.options[ctl.selectedIndex].text : ctl.value;
+      const uv = f.querySelector('.uv select'); if (uv) v += ' ' + uv.options[uv.selectedIndex].text;
+      const cb = f.querySelector('input[type=checkbox]');
+      rows.push({ cells: [{ t: name }, { t: v }, { t: (small ? small.textContent : '') + (cb ? (cb.checked ? ' · manual' : ' · otomatis') : '') }] });
+    });
+  });
+  return { head: ['Parameter', 'Nilai', 'Keterangan'], rows };
+}
+async function buildPdfFit() {
+  let r = null;
+  for (let t = 0; t <= 4; t++) {
+    const x = await buildPdf(t);
+    if (!r) r = x;
+    if (x.pages < r.pages || x.lastUsed >= 30) { r = x; if (x.lastUsed >= 30) break; }
+  }
+  return r;
+}
+async function buildPdf(tight = 0) {
+  const R = RES, PJ = readProj(), s = R.sel, f = R.f;
+  const D = new PDFW.Doc();
+  const INK = [20, 32, 43], MUT = [86, 99, 111], LINE = [200, 209, 216], ACC = [196, 101, 14], STEEL = [44, 95, 130], OK = [45, 122, 76], BAD = [189, 58, 43], WARN = [166, 114, 6];
+  const ML = 16, CW = 178, TOP = 22, BOT = 297 - 16;
+  let y = 0;
+  const lh = sz => sz * .3528 * 1.32;
+  const newPage = () => { D.addPage(); y = TOP; };
+  const ensure = h => { if (y + h > BOT) newPage(); };
+  const wrap = (text, w, size, bold) => {
+    const out = [];
+    String(text).split('\n').forEach(par => {
+      const words = par.split(' '); let cur = '';
+      words.forEach(wd => {
+        const t = cur ? cur + ' ' + wd : wd;
+        if (D.tw(t, size, bold) <= w || !cur) cur = t; else { out.push(cur); cur = wd; }
+        while (D.tw(cur, size, bold) > w && cur.length > 4) { let k = cur.length - 1; while (k > 1 && D.tw(cur.slice(0, k), size, bold) > w) k--; out.push(cur.slice(0, k)); cur = cur.slice(k); }
+      });
+      out.push(cur);
+    });
+    return out;
+  };
+  const heading = (t, need = 40) => { ensure(need); y += 3; D.text(t, ML, y + 5, { size: 13, bold: true }); D.line(ML, y + 7.5, ML + CW, y + 7.5, { color: INK, lw: .45 }); y += 12; };
+  const sub = t => { ensure(24); D.text(t, ML, y + 4, { size: 10, bold: true, color: STEEL }); y += 7; };
+  const para = (t, o = {}) => {
+    const sz = (o.size || 8.6) * (o.k || 1), L = wrap(t, o.w || CW - (o.indent || 0), sz, o.bold);
+    if (L.length <= 6) ensure(L.length * lh(sz));
+    L.forEach((ln, i) => { ensure(lh(sz)); if (o.bullet && i === 0) D.text('•', ML, y + lh(sz) * .78, { size: sz, color: o.color || INK }); D.text(ln, ML + (o.indent || 0), y + lh(sz) * .78, { size: sz, bold: o.bold, color: o.color || INK }); y += lh(sz); });
+    y += (o.after == null ? 2 : o.after) * (o.k || 1);
+  };
+  const statusColor = t => /Tidak OK|< tn|Tidak ada/.test(t) ? BAD : />90%|sch min/.test(t) ? WARN : /^(OK|Minimum memenuhi)/.test(t) ? OK : /^Info/.test(t) ? STEEL : null;
+  function table(tb, o = {}) {
+    const size = o.size || 7.6, pad = 1.3, L = lh(size);
+    const nCol = tb.head ? tb.head.length : Math.max(...tb.rows.filter(r => r.cells).map(r => r.cells.length));
+    const nat = new Array(nCol).fill(10);
+    const consider = (i, t, bold) => { const w = Math.min(o.cap || 74, D.tw(t, size, bold) + 2 * pad + .5); if (w > nat[i]) nat[i] = w; };
+    if (tb.head) tb.head.forEach((t, i) => consider(i, t, true));
+    tb.rows.forEach(r => { if (r.cells) r.cells.forEach((c, i) => String(c.t).split('\n').forEach(part => consider(i, part, c.bold))); });
+    const sum = nat.reduce((a, b) => a + b, 0);
+    const colW = o.widths ? o.widths.map(x => x * CW) : nat.map(w => w * CW / sum);
+    const numCol = o.num || new Array(nCol).fill(false);
+    const drawHead = () => {
+      if (!tb.head) return;
+      const lines = tb.head.map((t, i) => wrap(t, colW[i] - 2 * pad, size, true));
+      const h = Math.max(...lines.map(l => l.length)) * L + 2 * pad;
+      D.rect(ML, y, CW, h, { fill: INK }); let x = ML;
+      lines.forEach((ls, i) => { ls.forEach((ln, k) => D.text(ln, numCol[i] ? x + colW[i] - pad : x + pad, y + pad + L * (k + .78), { size, bold: true, color: [255, 255, 255], align: numCol[i] ? 'right' : 'left' })); x += colW[i]; });
+      y += h;
+    };
+    ensure(14); drawHead();
+    tb.rows.forEach((r, ri) => {
+      if (r.grp) { const h = L + 2 * pad + 1; if (y + h + L > BOT) { newPage(); drawHead(); } D.rect(ML, y, CW, h, { fill: [232, 238, 243] }); D.text(r.grp, ML + pad, y + pad + L * .9, { size: size + .6, bold: true, color: STEEL }); y += h; return; }
+      const cells = r.cells.map((c, i) => ({ ...c, lines: wrap(c.t, colW[i] - 2 * pad, size, c.bold) }));
+      const h = Math.max(1, ...cells.map(c => c.lines.length)) * L + 2 * pad;
+      if (y + h > BOT) { newPage(); drawHead(); }
+      if (r.hl) D.rect(ML, y, CW, h, { fill: [246, 228, 210] }); else if (o.zebra && ri % 2) D.rect(ML, y, CW, h, { fill: [246, 248, 250] });
+      let x = ML;
+      cells.forEach((c, i) => {
+        const sc = statusColor(c.t);
+        c.lines.forEach((ln, k) => D.text(ln, numCol[i] ? x + colW[i] - pad : x + pad, y + pad + L * (k + .78), { size, bold: c.bold || r.hl && i === 0, color: sc || (k > 0 && o.mutedNotes ? MUT : INK), align: numCol[i] ? 'right' : 'left' }));
+        x += colW[i];
+      });
+      D.line(ML, y + h, ML + CW, y + h, { color: LINE, lw: .2 }); y += h;
+    });
+    y += 4;
+  }
+  const eqLine = (lhs, sub1, res, ref) => {
+    ensure(16);
+    D.rect(ML, y, CW, 13, { fill: [247, 249, 250], stroke: LINE, lw: .25 });
+    D.text(lhs, ML + 4, y + 5.4, { size: 9.4, bold: true });
+    D.text(sub1, ML + 4, y + 10.2, { size: 8.6, color: MUT });
+    D.text(res, ML + CW - 4, y + 8, { size: 11, bold: true, color: ACC, align: 'right' });
+    y += 15; if (ref) para(ref, { size: 7.4, color: MUT, after: 3 });
+  };
+  const codeName = R.b318 ? 'ASME B31.8' : 'ASME B31.3';
+  const pipeTxt = `NPS ${npsTxt(R.st.nps).replace('½', '1/2').replace('¾', '3/4').replace('¼', '1/4')} (DN ${WT.B3610[R.st.nps][1]}), D = ${nf(R.D, 3)} in · ${R.mat.name} ${R.g[0]} · ${R.ty[1]}`;
+
+  /* cover */
+  newPage();
+  D.rect(0, 0, 210, 50, { fill: INK });
+  D.text('PERHITUNGAN DESAIN · TEBAL DINDING PIPA', ML, 15, { size: 8, bold: true, color: [240, 152, 60] });
+  D.text('Kalkulasi Ketebalan Dinding Pipa', ML, 27, { size: 22, bold: true, color: [255, 255, 255] });
+  wrap(PJ.name || 'Proyek belum diberi nama', CW, 12, false).slice(0, 2).forEach((ln, i) => D.text(ln, ML, 36 + i * 5.5, { size: 12, color: [214, 223, 230] }));
+  y = 58;
+  table({ head: null, rows: [
+    ['Proyek', PJ.name || '–'], ['Klien / pemilik', PJ.client || '–'], ['Line / tag', PJ.tag || '–'], ['Pipa', pipeTxt],
+    ['Kode desain', `${codeName} · ${R.b318 ? (R.st.sys === 'pp' ? 'Perpipaan stasiun' : 'Pipa penyalur') : 'Perpipaan servis selain gas bumi'}`],
+    ['Kondisi desain', `P = ${nf(R.P, 1)} psig (${nf(R.P / WT.BAR, 2)} barg) · T = ${nf(R.Tf, 1)} °F (${nf((R.Tf - 32) * 5 / 9, 1)} °C)`],
+    ...(SC.active ? [['Skenario', SC.active]] : []), ['No. dokumen', PJ.docNo || '–'], ['Revisi', PJ.rev], ['Tanggal', PJ.date || '–'], ['Disusun oleh', PJ.prep || '–'], ['Diperiksa oleh', PJ.chk || '–']
+  ].map(([a, b]) => ({ cells: [{ t: a, bold: true }, { t: b }] })) }, { widths: [.24, .76], size: 8.6 });
+  const bad = !s || R.fail;
+  ensure(14);
+  D.rect(ML, y, CW, 11, { fill: bad ? [247, 220, 216] : [220, 239, 227], stroke: bad ? BAD : OK, lw: .4 });
+  D.text(!s ? 'Tidak ada wall thickness standar yang memenuhi' : R.fail ? `${R.fail} pemeriksaan tidak memenuhi kriteria` : `WT ${nf(s.t, 3)} in (${s.label}) memenuhi semua pemeriksaan`, ML + 4, y + 7.2, { size: 11, bold: true, color: bad ? BAD : OK });
+  y += 15;
+  const kp = [
+    ['WT terpilih', s ? `${nf(s.t, 3)} in / ${nf(s.t * MMI, 2)} mm` : '–'], ['Schedule', s ? s.label : '–'], ['Thickness necessary, tn', `${nf(R.tn, 4)} in`],
+    ['Calculated, tm', `${nf(R.tm, 4)} in`], ['MAWP pada t sisa', s ? `${nf(s.mawp, 0)} psig` : '–'], ['Hoop stress desain', s ? `${nf(s.pct, 1)}% SMYS` : '–'],
+    ['Uji tekan', s ? `${nf(R.Ptest, 0)} psig` : '–'], ['Berat pipa', s ? `${nf(s.kgm, 2)} kg/m` : '–'], ['D/t', s ? nf(s.Dt, 1) : '–']
+  ];
+  const bw = CW / 3, bh = 13; ensure(bh * 3 + 2);
+  kp.forEach(([a, b], i) => {
+    const cx = ML + (i % 3) * bw, cy = y + Math.floor(i / 3) * bh;
+    D.rect(cx, cy, bw, bh, { stroke: LINE, lw: .25, fill: i === 0 ? [246, 228, 210] : [247, 249, 250] });
+    D.text(a.toUpperCase(), cx + 3, cy + 4.6, { size: 6.4, bold: true, color: MUT });
+    D.text(b, cx + 3, cy + 10.4, { size: 11, bold: true, color: i === 0 ? ACC : INK });
+  });
+  y += bh * 3 + 5;
+  const notes = [...R.warn, ...R.info];
+  if (notes.length) { sub('Catatan'); notes.forEach(t => para(t, { size: 8, bullet: true, indent: 4, after: .6 })); }
+
+  /* 1 input */
+  newPage();
+  heading('1  Data input');
+  table(inputRows(), { size: 7.6, mutedNotes: true, widths: [.34, .36, .30] });
+
+  /* 2 steps */
+  heading('2  Langkah perhitungan', 80);
+  sub('2.1  Parameter perhitungan');
+  const pr = [];
+  const add = (a, v, r) => pr.push({ cells: [{ t: a }, { t: v }, { t: r }] });
+  add('Tekanan desain, P', `${nf(R.P, 1)} psig`, 'Data desain proyek');
+  add('Diameter luar, D', `${nf(R.D, 3)} in (${nf(R.D * MMI, 1)} mm)`, R.st.odMode === 'custom' ? 'Input manual' : 'ASME B36.10M');
+  if (R.b318) {
+    add('SMYS, S', `${nf(R.S, 0)} psi`, R.mat.std); add('Design factor, F', nf(f.F, 3), R.st.fOver ? 'Manual' : `${f.loc[1]}, Tabel 841.1.6-1`);
+    add('Joint factor, E', nf(f.E, 2), R.st.eOver ? 'Manual' : `${R.ty[1]}, Tabel 841.1.7-1`); add('Temp. derating, T', nf(f.T, 3), R.st.tOver ? 'Manual' : 'Tabel 841.1.8-1');
+  } else {
+    add('Allowable stress, S', `${nf(f.Sa, 0)} psi`, R.st.sOver ? 'Manual' : 'ASME B31.3 Tabel A-1'); add('Quality factor, E', nf(f.E, 2), R.st.eOver ? 'Manual' : 'Tabel A-3');
+    add('Weld strength reduction, W', nf(f.W, 2), 'Tabel 302.3.5-1'); add('Coefficient, Y', nf(f.Y, 2), 'Tabel 304.1.1-1');
+  }
+  add('Allowance, c', `${nf(R.c, 4)} in`, 'Corrosion + mechanical allowance'); add('Mill tolerance, m', R.tnTol.txt, R.st.tolMode === 'manual' ? 'Input (default 10%)' : R.mat.std);
+  table({ head: ['Parameter', 'Nilai', 'Referensi'], rows: pr }, { size: 7.8, widths: [.32, .28, .40] });
+  sub('2.2  Calculated Wall Thickness (tm)');
+  if (R.b318) eqLine('tm = P · D / (2 · S · F · E · T)', `= ${nf(R.P, 1)} × ${nf(R.D, 3)} / (2 × ${nf(R.S, 0)} × ${nf(f.F, 3)} × ${nf(f.E, 2)} × ${nf(f.T, 3)})`, `${nf(R.tm, 4)} in`, `Persamaan (1), ASME B31.8 841.1.1(a). tm = ${nf(R.tm * MMI, 2)} mm.`);
+  else eqLine('tm = P · D / [2 (S · E · W + P · Y)]', `= ${nf(R.P, 1)} × ${nf(R.D, 3)} / [2 × (${nf(f.Sa, 0)} × ${nf(f.E, 2)} × ${nf(f.W, 2)} + ${nf(R.P, 1)} × ${nf(f.Y, 2)})]`, `${nf(R.tm, 4)} in`, `Persamaan (3), ASME B31.3 304.1.2(a). tm = ${nf(R.tm * MMI, 2)} mm.`);
+  sub('2.3  Thickness Necessary (tn)');
+  if (R.tnTol.pct != null) eqLine('tn = (tm + c) / (1 − m)', `= (${nf(R.tm, 4)} + ${nf(R.c, 4)}) / (1 − ${nf(R.tnTol.pct / 100, 3)})`, `${nf(R.tn, 4)} in`, `Persamaan (2). tn = ${nf(R.tn * MMI, 2)} mm.`);
+  else eqLine('tn = tm + c + toleransi absolut', `= ${nf(R.tm, 4)} + ${nf(R.c, 4)} + ${nf(R.tnTol.tol, 4)}  (${R.tnTol.txt})`, `${nf(R.tn, 4)} in`, `Persamaan (2) dengan toleransi API 5L absolut. tn = ${nf(R.tn * MMI, 2)} mm.`);
+  sub('2.4  Selected Wall Thickness');
+  if (s) eqLine(`WT standar ≥ tn = ${nf(R.tn, 4)} in`, `${R.st.minSch ? 'Schedule minimum: ' + $('minSch').selectedOptions[0].text + ' · ' : ''}${s.manual ? 'dipilih manual' : 'WT terkecil yang memenuhi'}`, `${nf(s.t, 3)} in · ${s.label}`, `= ${nf(s.t * MMI, 2)} mm. MAOP (t nominal) ${nf(s.maop, 0)} psig; MAWP pada t sisa ${nf(s.tcor, 4)} in = ${nf(s.mawp, 0)} psig; berat ${nf(s.kgm, 2)} kg/m.`);
+  else para('Tidak ada WT standar yang memenuhi.', { color: BAD, bold: true });
+
+  /* 3 checks */
+  heading('3  Pemeriksaan desain');
+  table({ head: ['Kriteria', 'Nilai', 'Batas', 'UC', 'Status'], rows: R.checks.map(c => ({ cells: [{ t: c.k }, { t: c.v }, { t: c.lim }, { t: c.info ? '–' : nf(c.uc, 2) }, { t: c.info ? (c.ok ? 'Info · OK' : 'Info · dinding tebal') : !c.ok ? 'Tidak OK' : c.warnIf ? 'OK (>90%)' : 'OK' }] })) }, { size: 7.6, widths: [.42, .16, .16, .08, .18], num: [false, true, true, true, false] });
+
+  /* 4 comparison */
+  heading('4  Perbandingan wall thickness');
+  para(`NPS ${pipeTxt.split(' ·')[0]}. Baris bersorot = WT terpilih.`, { size: 8, color: MUT });
+  table({ head: ['WT (in)', 'Schedule', 'mm', 'Mill tol.', 't sisa', 'MAWP sisa (psig)', '%SMYS', 'kg/m', 'Status'], rows: R.rows.map(r => ({ hl: r.sel, cells: [{ t: nf(r.t, 3) }, { t: r.label }, { t: nf(r.t * MMI, 2) }, { t: nf(r.tol, 4) }, { t: nf(r.tcor, 4) }, { t: nf(r.mawp, 0) }, { t: nf(r.pct, 1) }, { t: nf(r.kgm, 2) }, { t: !r.ok ? '< tn' : !r.schOk ? '< sch min' : r.auto ? 'Minimum memenuhi' : 'OK' }] })) }, { size: 7.2, num: [true, false, true, true, true, true, true, true, false] });
+
+  /* 5 all sizes */
+  let sec = 5;
+  if ($('pdfAll').checked) {
+    heading(`${sec++}  Ringkasan semua ukuran`);
+    para('WT minimum yang memenuhi untuk setiap NPS dengan input yang sama.', { size: 8, color: MUT });
+    table({ head: ['NPS', 'DN', 'OD (in)', 'tm (in)', 'tn (in)', 'WT (in)', 'WT (mm)', 'Schedule', 'MAWP sisa', 'kg/m'], rows: ALL.map(a => ({ hl: a.nps === R.st.nps, cells: [{ t: a.nps }, { t: String(a.dn) }, { t: nf(a.D, 3) }, { t: nf(a.tm, 4) }, { t: nf(a.tn, 4) }, { t: a.sel ? nf(a.sel.t, 3) : '–' }, { t: a.sel ? nf(a.sel.t * MMI, 2) : '–' }, { t: a.sel ? a.sel.label : 'Tidak ada' }, { t: a.sel ? nf(a.sel.mawp, 0) : '–' }, { t: a.sel ? nf(a.sel.kgm, 2) : '–' }] })) }, { size: 7.2, num: [false, true, true, true, true, true, true, false, true, true] });
+  }
+
+  /* refs & assumptions (compressed by tight) */
+  const K = 1 - .08 * tight;
+  heading(`${sec++}  Dasar perhitungan`);
+  [['Persamaan (1), ASME B31.8 841.1.1(a)', 'tm = PD / (2SFET). Untuk servis gas bumi; dinding tipis D/t > 30. Untuk D/t < 30 boleh memakai P = 2St/(D − t)·FET.'],
+    ['Persamaan (3), ASME B31.3 304.1.2(a)', 'tm = PD / [2(SEW + PY)]. Untuk servis selain gas bumi; berlaku bila t < D/6 dan P/SE ≤ 0,385.'],
+    ['Persamaan (2), Thickness Necessary', 'tn = (tm + c)/(1 − m). Untuk toleransi absolut API 5L, tn = tebal nominal terkecil dengan t − toleransi(t) ≥ tm + c.'],
+    ['Selected Wall Thickness', 'WT standar ASME B36.10M (baja karbon) / B36.19 (stainless) yang ≥ tn, dengan memperhatikan schedule minimum Piping Material Class.'],
+    ['MAWP pada t sisa', 'Tekanan izin pada t sisa = t − mill tolerance − c. WT memenuhi bila P desain ≤ MAWP sisa (setara t ≥ tn).']
+  ].forEach(([a, b]) => { ensure(10); para(a, { size: 8.6, bold: true, after: .2, k: K }); para(b, { size: 8, color: MUT, after: 1.6, k: K }); });
+  heading(`${sec++}  Standar & referensi`);
+  [...$('std').children].forEach(d => { ensure(10); para(d.querySelector('b').textContent, { size: 8.6, bold: true, after: .2, k: K }); para(d.querySelector('span').textContent, { size: 8, color: MUT, after: 1.6, k: K }); });
+  heading(`${sec++}  Asumsi & batasan`);
+  [...$('assume').querySelectorAll('li')].forEach(li => para(li.textContent, { size: 8.2, bullet: true, indent: 4, after: .8, k: K }));
+  para('Dokumen ini adalah alat bantu desain awal. Hasil akhir wajib diverifikasi engineer yang berwenang terhadap edisi code dan spesifikasi proyek yang berlaku.', { size: 8, color: MUT, k: K });
+
+  /* header & footer */
+  const lastY = y;
+  const n = D.pages.length, title = `Kalkulasi Tebal Dinding Pipa – ${PJ.name || pipeTxt.split(' ·')[0]}`;
+  D.pages.forEach((pg, i) => {
+    D.p = pg;
+    if (i > 0) {
+      D.text(wrap(title, 120, 7.4)[0], ML, 12, { size: 7.4, color: MUT });
+      D.text([PJ.docNo, 'Rev. ' + PJ.rev].filter(Boolean).join(' · '), ML + CW, 12, { size: 7.4, color: MUT, align: 'right' });
+      D.line(ML, 14, ML + CW, 14, { color: LINE, lw: .3 });
+    }
+    D.line(ML, 287, ML + CW, 287, { color: LINE, lw: .3 });
+    D.text(`${codeName} · ${PJ.tag || pipeTxt.split(' ·')[0]} · ${PJ.date || ''}`, ML, 291, { size: 7, color: MUT });
+    D.text(`Halaman ${i + 1} dari ${n}`, ML + CW, 291, { size: 7, color: MUT, align: 'right' });
+  });
+  const bytes = D.output({ title, author: PJ.prep, subject: 'Kalkulasi ketebalan dinding pipa' });
+  const fname = (`Kalkulasi WT - ${PJ.name || 'NPS ' + R.st.nps}` + (PJ.docNo ? ` - ${PJ.docNo}` : '') + ` - Rev ${PJ.rev}`).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').slice(0, 150) + '.pdf';
+  return { bytes, fname, lastUsed: lastY - TOP, pages: n };
+}
+$('btnPdf').addEventListener('click', async () => {
+  const b = $('btnPdf'), msg = $('pdfMsg'); if (!RES) return;
+  b.disabled = true; b.textContent = 'Menyiapkan PDF…'; msg.textContent = '';
+  try { const { bytes, fname } = await buildPdfFit(); msg.textContent = (await deliver(bytes, fname, 'application/pdf')).replace('File', 'PDF'); }
+  catch (e) { msg.textContent = 'PDF gagal dibuat.'; console.error(e); }
+  b.disabled = false; b.textContent = 'Unduh PDF';
+});
+['projName', 'projClient', 'lineTag', 'docNo', 'docRev', 'docDate', 'prepBy', 'chkBy'].forEach(id => $(id).addEventListener('input', () => { projUI(); draftSave(); }));
+
+/* boot */
+ui();
+if (!draftLoad()) recalc(false);
+scInit();
+window.__WT_TEST = { readState, get RES() { return RES; }, buildPdf, buildPdfFit, applyState, formState, summaryText };
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body></html>

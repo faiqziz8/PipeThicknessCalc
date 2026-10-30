@@ -1,0 +1,16 @@
+{
+  "name": "Kalkulator Ketebalan Dinding Pipa",
+  "short_name": "Kalkulator WT",
+  "description": "Kalkulasi wall thickness pipa baja (ASME B31.8 / B31.3)",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e8ecef",
+  "theme_color": "#14202b",
+  "lang": "id",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
