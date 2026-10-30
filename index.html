@@ -930,27 +930,41 @@ const inMm = (t, d = 3) => `${nf(t, d)} in <span class="ref">(${nf(t * MMI, 2)} 
 const pBoth = p => `${nf(p, 1)} psig <span class="ref">(${nf(p / WT.BAR, 2)} barg)</span>`;
 const tBoth = f => `${nf(f, 1)} °F <span class="ref">(${nf((f - 32) * 5 / 9, 1)} °C)</span>`;
 
-function renderXsec(R) {
-  const svg = $('xsec'), s = R.sel; if (!s) { svg.innerHTML = ''; return; }
+const CSSPAL = { mill: 'var(--mill)', tm: 'var(--tm)', spare: 'var(--spare)', ca: 'var(--ca)', ink: 'var(--ink)', muted: 'var(--muted)', mono: 'var(--f-mono)', body: 'var(--f-body)' };
+const PDFPAL = { mill: '#8fa6b8', tm: '#2c5f82', spare: '#7fb38f', ca: '#c98a3c', ink: '#14202b', muted: '#56636f', mono: 'Helvetica, Arial, sans-serif', body: 'Helvetica, Arial, sans-serif' };
+function xsecMarkup(R, C) {
+  const s = R.sel; if (!s) return '';
   const cx = 130, cy = 122, Ro = 96;
   const k = Ro / (R.D / 2);
-  // exaggerate wall for legibility: wall drawn at max(true, 14% of R)
+  // exaggerate wall for legibility: wall drawn at max(true, 16% of R)
   const tTrue = s.t * k, tDraw = Math.max(tTrue, Ro * .16), sc = tDraw / tTrue;
   const ring = (r1, r2, fill) => `<path d="M ${cx - r1} ${cy} a ${r1} ${r1} 0 1 0 ${2 * r1} 0 a ${r1} ${r1} 0 1 0 ${-2 * r1} 0 Z M ${cx - r2} ${cy} a ${r2} ${r2} 0 1 1 ${2 * r2} 0 a ${r2} ${r2} 0 1 1 ${-2 * r2} 0 Z" fill="${fill}" fill-rule="evenodd"/>`;
   const rMill = Ro - s.tol * k * sc, rTm = rMill - R.tm * k * sc, rIn = Ro - tDraw;
   const rCa = rIn + R.c * k * sc;
   let h = '';
-  h += ring(Ro, rMill, 'var(--mill)');
-  h += ring(rMill, Math.max(rTm, rCa), 'var(--tm)');
-  if (rTm > rCa + .3) h += ring(rTm, rCa, 'var(--spare)');
-  if (R.c > 0) h += ring(rCa, rIn, 'var(--ca)');
-  h += `<circle cx="${cx}" cy="${cy}" r="${Ro}" fill="none" stroke="var(--ink)" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="${rIn}" fill="none" stroke="var(--ink)" stroke-width="1"/>`;
-  h += `<line x1="${cx - Ro}" y1="${cy}" x2="${cx + Ro}" y2="${cy}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
-  h += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" style="font:500 12px var(--f-mono);fill:var(--ink)">D ${nf(R.D, 3)} in</text>`;
-  h += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font:500 11px var(--f-mono);fill:var(--muted)">ID ${nf(s.ID, 3)} in</text>`;
-  h += `<text x="${cx}" y="246" text-anchor="middle" style="font:600 13px var(--f-mono);fill:var(--ink)">t = ${nf(s.t, 3)} in · ${esc(s.label)}</text>`;
-  if (sc > 1.05) h += `<text x="${cx}" y="258" text-anchor="middle" style="font:10px var(--f-body);fill:var(--muted)">tebal dinding diperbesar ×${nf(sc, 1)} agar terbaca</text>`;
-  svg.innerHTML = h;
+  h += ring(Ro, rMill, C.mill);
+  h += ring(rMill, Math.max(rTm, rCa), C.tm);
+  if (rTm > rCa + .3) h += ring(rTm, rCa, C.spare);
+  if (R.c > 0) h += ring(rCa, rIn, C.ca);
+  h += `<circle cx="${cx}" cy="${cy}" r="${Ro}" fill="none" stroke="${C.ink}" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="${rIn}" fill="none" stroke="${C.ink}" stroke-width="1"/>`;
+  h += `<line x1="${cx - Ro}" y1="${cy}" x2="${cx + Ro}" y2="${cy}" stroke="${C.muted}" stroke-dasharray="3 3"/>`;
+  h += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" style="font-weight:500;font-size:12px;font-family:${C.mono};fill:${C.ink}">D ${nf(R.D, 3)} in</text>`;
+  h += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font-weight:500;font-size:11px;font-family:${C.mono};fill:${C.muted}">ID ${nf(s.ID, 3)} in</text>`;
+  h += `<text x="${cx}" y="246" text-anchor="middle" style="font-weight:600;font-size:13px;font-family:${C.mono};fill:${C.ink}">t = ${nf(s.t, 3)} in · ${esc(s.label)}</text>`;
+  if (sc > 1.05) h += `<text x="${cx}" y="258" text-anchor="middle" style="font-size:10px;font-family:${C.body};fill:${C.muted}">tebal dinding diperbesar ×${nf(sc, 1)} agar terbaca</text>`;
+  return h;
+}
+function renderXsec(R) { $('xsec').innerHTML = xsecMarkup(R, CSSPAL); }
+async function xsecJpeg(R) {
+  try {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 264" width="780" height="792"><rect width="260" height="264" fill="#ffffff"/>${xsecMarkup(R, PDFPAL)}</svg>`;
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    await img.decode();
+    const c = document.createElement('canvas'); c.width = 780; c.height = 792;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(res => c.toBlob(b => { if (!b) return res(null); b.arrayBuffer().then(a => res({ bytes: new Uint8Array(a), w: c.width, h: c.height }), () => res(null)); }, 'image/jpeg', .92));
+  } catch (e) { return null; }
 }
 function renderBar(R) {
   const s = R.sel; if (!s) { $('bar').innerHTML = ''; $('barKeys').innerHTML = ''; return; }
@@ -1411,6 +1425,39 @@ async function buildPdf(tight = 0) {
     D.text(b, cx + 3, cy + 10.4, { size: 11, bold: true, color: i === 0 ? ACC : INK });
   });
   y += bh * 3 + 5;
+  if (s) {
+    const im = await xsecJpeg(R);
+    const fh = 62, fw = fh * 260 / 264;
+    ensure(fh + 6);
+    sub('Penampang & komposisi WT terpilih');
+    const y0 = y;
+    if (im) { const nimg = D.addJpeg(im.bytes, im.w, im.h); D.image(nimg, ML, y0, fw, fh); D.rect(ML, y0, fw, fh, { stroke: LINE, lw: .25 }); }
+    const bx = ML + fw + 8, bwid = CW - fw - 8;
+    const spare = Math.max(0, s.t - s.tol - R.c - R.tm);
+    const parts = [['tm (tekanan)', R.tm, [44, 95, 130]], ['c (allowance)', R.c, [201, 138, 60]], ['mill tolerance', s.tol, [143, 166, 184]], ['cadangan', spare, [127, 179, 143]]];
+    const tot = parts.reduce((a, p) => a + p[1], 0) || 1;
+    let by = y0 + 4;
+    D.text('Komposisi tebal nominal', bx, by + 3, { size: 9, bold: true }); by += 7;
+    let bxx = bx;
+    parts.forEach(p => { const w = p[1] / tot * bwid; if (w > 0) { D.rect(bxx, by, w, 9, { fill: p[2] }); bxx += w; } });
+    D.rect(bx, by, bwid, 9, { stroke: LINE, lw: .25 });
+    by += 14;
+    parts.forEach(p => {
+      D.rect(bx, by - 2.6, 3, 3, { fill: p[2] });
+      D.text(p[0], bx + 5, by, { size: 8.2 });
+      D.text(`${nf(p[1], 4)} in`, bx + bwid * .62, by, { size: 8.2, align: 'right' });
+      D.text(`${nf(p[1] * MMI, 2)} mm`, bx + bwid * .84, by, { size: 8.2, align: 'right', color: MUT });
+      D.text(`${nf(p[1] / s.t * 100, 1)}%`, bx + bwid, by, { size: 8.2, align: 'right', color: MUT });
+      by += 5.2;
+    });
+    D.line(bx, by - 2.2, bx + bwid, by - 2.2, { color: LINE, lw: .25 });
+    D.text('WT nominal', bx + 5, by + 1.6, { size: 8.4, bold: true });
+    D.text(`${nf(s.t, 3)} in`, bx + bwid * .62, by + 1.6, { size: 8.4, bold: true, align: 'right' });
+    D.text(`${nf(s.t * MMI, 2)} mm`, bx + bwid * .84, by + 1.6, { size: 8.4, bold: true, align: 'right' });
+    by += 9;
+    wrap('Penampang digambar dengan tebal dinding diperbesar agar lapisan terbaca. Dari luar ke dalam: mill tolerance, tm, cadangan, corrosion allowance.', bwid, 7.4).forEach(ln => { D.text(ln, bx, by, { size: 7.4, color: MUT }); by += 3.6; });
+    y = Math.max(y0 + fh, by) + 5;
+  }
   const notes = [...R.warn, ...R.info];
   if (notes.length) { sub('Catatan'); notes.forEach(t => para(t, { size: 8, bullet: true, indent: 4, after: .6 })); }
 
